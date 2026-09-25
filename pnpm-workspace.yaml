@@ -1,0 +1,6 @@
+packages:
+  - plugin
+
+# esbuild ships a platform-specific binary from its postinstall script.
+allowBuilds:
+  esbuild: true
