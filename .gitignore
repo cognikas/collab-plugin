@@ -1,0 +1,15 @@
+node_modules/
+.pnpm-store/
+*.log
+*.tsbuildinfo
+
+# Local state / credentials: must never be committed
+credentials.json
+.collab-local/
+.env
+.env.*
+!.env.example
+
+# OS
+Thumbs.db
+.DS_Store

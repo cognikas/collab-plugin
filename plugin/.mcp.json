@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "collab": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/mcp-server.mjs"],
+      "env": {
+        "CLAUDE_PLUGIN_OPTION_API_ENDPOINT": "${user_config.api_endpoint}",
+        "CLAUDE_PLUGIN_OPTION_DISPLAY_NAME": "${user_config.display_name}",
+        "CLAUDE_PLUGIN_OPTION_INVITE_CODE": "${user_config.invite_code}",
+        "CLAUDE_PLUGIN_OPTION_DELIVERY_MODE": "${user_config.delivery_mode}",
+        "CLAUDE_PLUGIN_OPTION_STOP_MIN_URGENCY": "${user_config.stop_min_urgency}",
+        "CLAUDE_PLUGIN_OPTION_TOPIC": "${user_config.topic}",
+        "CLAUDE_PLUGIN_OPTION_MEMBER_ID": "${user_config.member_id}",
+        "CLAUDE_PLUGIN_OPTION_MEMBER_SECRET": "${user_config.member_secret}"
+      }
+    }
+  }
+}

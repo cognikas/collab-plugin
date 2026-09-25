@@ -1,0 +1,105 @@
+{
+  "name": "collab-channel",
+  "displayName": "Collaboration Channel",
+  "version": "1.0.0-rc.1",
+  "description": "Live channel between interactive Claude Code sessions, organized by topic: messages to a topic or a person, presence, shared context, file claims and finished-work notifications — without handoffs.",
+  "author": {
+    "name": "Cognikas"
+  },
+  "license": "MIT",
+  "keywords": [
+    "collaboration",
+    "pair-programming",
+    "websocket",
+    "aws",
+    "notifications"
+  ],
+  "channels": [
+    {
+      "server": "collab"
+    }
+  ],
+  "userConfig": {
+    "api_endpoint": {
+      "type": "string",
+      "title": "API endpoint",
+      "description": "HTTPS endpoint of the 1.0 channel backend (collab-backend), from the CDK stack output HttpEndpoint. A 0.6 endpoint does not work with this plugin.",
+      "required": true
+    },
+    "invite_code": {
+      "type": "string",
+      "title": "Invite code",
+      "description": "One-shot code from whoever runs the channel. It is redeemed on first start and then spent.",
+      "sensitive": true
+    },
+    "display_name": {
+      "type": "string",
+      "title": "Display name",
+      "description": "How your peer sees you on the channel.",
+      "required": true
+    },
+    "topic": {
+      "type": "string",
+      "title": "Topic",
+      "description": "The topic your sessions join: they only receive messages, claims and context addressed to it. Leave empty to use the repository's name. To set it for one project, put COLLAB_TOPIC in the env of that project's .claude/settings.local.json instead; that wins over this."
+    },
+    "delivery_mode": {
+      "type": "string",
+      "title": "How incoming messages reach you",
+      "description": "stop: interrupt at the end of a turn (default). prompt: only when you type. manual: nothing automatic, tools only. all: session start, every prompt, and end of turn. channel: stop, plus messages pushed into the session while it is idle; needs the session started with --dangerously-load-development-channels plugin:collab-channel@cognikas, and falls back to stop without it.",
+      "options": [
+        "stop",
+        "prompt",
+        "manual",
+        "all",
+        "channel"
+      ],
+      "default": "stop"
+    },
+    "stop_min_urgency": {
+      "type": "string",
+      "title": "Minimum urgency to interrupt",
+      "description": "Only messages at or above this urgency interrupt the end of a turn.",
+      "options": [
+        "low",
+        "normal",
+        "high"
+      ],
+      "default": "normal"
+    },
+    "midturn_min_urgency": {
+      "type": "string",
+      "title": "Minimum urgency to deliver mid-turn",
+      "description": "Messages at or above this urgency reach the session right after its next tool call, without waiting for the turn to end. Ignored in prompt and manual modes. off disables it.",
+      "options": [
+        "off",
+        "normal",
+        "high"
+      ],
+      "default": "high"
+    },
+    "desktop_notifications": {
+      "type": "boolean",
+      "title": "Desktop notifications",
+      "description": "Show a system notification for finished work and high-urgency messages.",
+      "default": true
+    },
+    "claim_warnings": {
+      "type": "boolean",
+      "title": "Warn on claimed files",
+      "description": "Ask for confirmation before editing a file your peer has claimed.",
+      "default": true
+    },
+    "member_id": {
+      "type": "string",
+      "title": "Member id (advanced)",
+      "description": "Set together with the member secret to keep credentials in the OS keychain instead of the plugin data directory."
+    },
+    "member_secret": {
+      "type": "string",
+      "title": "Member secret (advanced)",
+      "description": "The secret returned when you joined. Stored in the OS keychain.",
+      "sensitive": true
+    }
+  }
+}

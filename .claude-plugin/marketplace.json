@@ -1,0 +1,28 @@
+{
+  "name": "cognikas",
+  "owner": {
+    "name": "Cognikas"
+  },
+  "description": "Internal Claude Code plugins from Cognikas",
+  "version": "0.1.0",
+  "plugins": [
+    {
+      "name": "collab-channel",
+      "source": "./plugin",
+      "description": "Live channel between interactive Claude Code sessions, organized by topic: messages to a topic or a person, presence, shared context, file claims and finished-work notifications. Speaks protocol collab.v1.",
+      "displayName": "Collaboration Channel",
+      "version": "1.0.0-rc.1",
+      "author": {
+        "name": "Cognikas"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "collaboration",
+        "pair-programming",
+        "websocket",
+        "aws"
+      ]
+    }
+  ]
+}

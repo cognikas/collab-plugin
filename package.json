@@ -1,0 +1,20 @@
+{
+  "name": "collab-plugin",
+  "version": "1.0.0-rc.1",
+  "private": true,
+  "type": "module",
+  "description": "Plugin collab-channel de Claude Code y marketplace cognikas",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm --filter @collab/plugin build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "@collab/protocol": "github:cognikas/collab-protocol#v1.0.0-rc.1&path:/ts",
+    "typescript": "~7.0.2",
+    "ws": "^8.21.3"
+  }
+}
