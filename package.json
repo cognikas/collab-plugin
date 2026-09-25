@@ -13,7 +13,7 @@
     "test": "pnpm -r test"
   },
   "devDependencies": {
-    "@collab/protocol": "github:cognikas/collab-protocol#v1.0.0-rc.1&path:/ts",
+    "@collab/protocol": "github:cognikas/collab-protocol#v1.0.0-rc.2&path:/ts",
     "typescript": "~7.0.2",
     "ws": "^8.21.3"
   }
