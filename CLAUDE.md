@@ -75,6 +75,12 @@ files and `pnpm install`.
 
 ## Invariants that are easy to break
 
+- **`.mcp.json` must map every option explicitly** (`"CLAUDE_PLUGIN_OPTION_X": "${user_config.x}"`).
+  Claude Code exports `CLAUDE_PLUGIN_OPTION_*` automatically to hooks only; an MCP server gets an
+  option only through that mapping. The mapping makes a `--plugin-dir` load fail (no stored
+  options), which is why `scripts/dev-plugin.mjs` builds a copy without it for side-by-side tests.
+  Don't remove the mapping from the real `.mcp.json` to "fix" that.
+
 - **Hooks never touch the network.** They read what the daemon left on disk. `Stop` delivers by
   exiting 2 with stderr; `PostToolUse` delivers urgent messages as `additionalContext`; `PreToolUse`
   on Edit/Write warns about claimed files.

@@ -120,24 +120,41 @@ Cada comando actúa como una sesión en un tema (`--topic`, por defecto `general
 
 ## Probar 1.0 junto a 0.6
 
-Mientras la 0.6 sigue siendo el canal del día a día, la 1.0 se prueba en **sesiones aparte**, sin
-tocar la instalación del marketplace (los dos marketplaces se llaman `cognikas` y no pueden estar a
-la vez hasta el cambio):
+Mientras la 0.6 sigue siendo el canal del día a día, la 1.0 se prueba en una **sesión aparte**
+cargada desde una carpeta, sin tocar la instalación del marketplace (los dos marketplaces se llaman
+`cognikas` y no pueden estar a la vez hasta el cambio). Probado el 25-sep-2026.
 
-1. En el proyecto de prueba, desactiva la 0.6 solo ahí, para que sus hooks y su servidor MCP no
-   corran junto a los de la 1.0: `/plugin` → collab-channel → *Disable* con alcance de proyecto
-   (o `claude plugin disable collab-channel@cognikas --scope local` desde esa carpeta).
-2. Configura la 1.0 por entorno, porque un plugin cargado desde una carpeta no tiene sus opciones de
-   `/config`:
+1. Construye la copia para cargar desde carpeta (no hace falta `pnpm install`: `dist/` está
+   commiteado):
+
+   ```bash
+   git pull && node scripts/dev-plugin.mjs      # → .dev-plugin/collab-channel/
+   ```
+
+   Hace falta una copia porque un plugin cargado desde carpeta no tiene opciones guardadas, y Claude
+   Code no arranca un servidor MCP cuyo `.mcp.json` usa un `${user_config.*}` sin valor
+   (`Plugin option "api_endpoint" isn't set`). En la copia, `.mcp.json` no mapea opciones y el
+   servidor MCP toma las variables `COLLAB_*` del entorno, igual que los hooks.
+
+2. En otra terminal, configura la 1.0 por entorno y abre Claude Code con la copia:
 
    ```bash
    export COLLAB_API_ENDPOINT=<HttpEndpoint de CollabBackendStack>
    export COLLAB_INVITE_CODE=<invitación del backend 1.0>
    export COLLAB_DISPLAY_NAME=<tu nombre>
-   claude --plugin-dir <ruta a collab-plugin>/plugin
+   export COLLAB_TOPIC=<tema de la prueba>                # opcional; si no, el nombre del repo
+   claude --plugin-dir <ruta a collab-plugin>/.dev-plugin/collab-channel
    ```
+
+   En PowerShell: `$env:COLLAB_API_ENDPOINT = "<...>"`, y así con las demás.
+
+   No hace falta desactivar la 0.6: en esa sesión el plugin de la carpeta reemplaza al instalado
+   (`Plugin "collab-channel" from --plugin-dir overrides installed version`) y solo corren los hooks
+   de la 1.0. Las demás sesiones siguen con la 0.6.
 
 3. Comprueba con `/collab-status` que la línea `Server:` dice protocolo 1.0.
 
-Los datos de una sesión así viven en el `CLAUDE_PLUGIN_DATA` que Claude Code asigne al plugin
-cargado desde carpeta, siempre bajo `v1/`, así que no pisan los de la 0.6.
+Los datos de esa sesión viven en `~/.claude/plugins/data/collab-channel-inline/v1/`, aparte de los de
+la 0.6. Tras el primer arranque, la credencial queda guardada en `v1/credentials.json` y se usa
+mientras el endpoint sea el mismo: **una invitación nueva se ignora**. Para unirte de nuevo (por
+ejemplo, a otro canal), borra ese archivo.
