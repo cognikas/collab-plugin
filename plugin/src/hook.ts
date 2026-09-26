@@ -7,7 +7,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { isChannelPrompt } from './lib/channel.js';
-import { readConfig, resolveCredentials, type PluginConfig } from './lib/config.js';
+import { readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
 import { callDaemon, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
 import {
   claimConflictReason, renderClaim, renderMember, renderMessage, UNTRUSTED_NOTE,
@@ -149,8 +149,8 @@ async function onSessionStart(
   tracksTurns: boolean,
 ): Promise<void> {
   const cwd = input.cwd ?? process.cwd();
-  process.env.COLLAB_REPO = cwd.split(/[\\/]/).pop();
-  process.env.COLLAB_BRANCH = gitBranch(cwd);
+  setEnv('COLLAB_REPO', cwd.split(/[\\/]/).pop());
+  setEnv('COLLAB_BRANCH', gitBranch(cwd));
   // The daemon resolves the session's topic from here.
   process.env.COLLAB_CWD = cwd;
 

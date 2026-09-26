@@ -58,6 +58,10 @@ function readConfig() {
     memberSecret: optional(e.CLAUDE_PLUGIN_OPTION_MEMBER_SECRET)
   };
 }
+function setEnv(name, value, env = process.env) {
+  if (value) env[name] = value;
+  else delete env[name];
+}
 function readCredentials() {
   try {
     return JSON.parse(fs.readFileSync(credentialsPath(), "utf8"));
@@ -419,8 +423,8 @@ function gitBranch(cwd) {
 }
 async function onSessionStart(input, config, clientSessionId, tracksTurns) {
   const cwd = input.cwd ?? process.cwd();
-  process.env.COLLAB_REPO = cwd.split(/[\\/]/).pop();
-  process.env.COLLAB_BRANCH = gitBranch(cwd);
+  setEnv("COLLAB_REPO", cwd.split(/[\\/]/).pop());
+  setEnv("COLLAB_BRANCH", gitBranch(cwd));
   process.env.COLLAB_CWD = cwd;
   try {
     await ensureDaemon(clientSessionId);

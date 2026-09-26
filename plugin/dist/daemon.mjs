@@ -9738,7 +9738,7 @@ var BUSY_STALE_MS = 10 * 60 * 1e3;
 var CONFIRM_WINDOW_MS = 180 * 1e3;
 
 // src/lib/version.ts
-var PLUGIN_VERSION = "1.0.0-rc.1";
+var PLUGIN_VERSION = "1.0.0-rc.2";
 
 // src/lib/wire.ts
 function ms(ts) {
