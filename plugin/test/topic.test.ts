@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { readConfig, repoName, resolveTopic } from '../src/lib/config.js';
+import { readConfig, repoName, resolveTopic, setEnv } from '../src/lib/config.js';
 
 /** A fake `git` that answers from a table of `<cwd>|<args>` → stdout. */
 function gitFrom(answers: Record<string, string>) {
@@ -75,5 +75,17 @@ describe('the topic setting', () => {
     expect(readConfig().topic).toBeUndefined();
     process.env.CLAUDE_PLUGIN_OPTION_TOPIC = '';
     expect(readConfig().topic).toBeUndefined();
+  });
+});
+
+describe('setEnv', () => {
+  it('removes the variable instead of storing "undefined"', () => {
+    const env: NodeJS.ProcessEnv = { COLLAB_BRANCH: 'main' };
+    setEnv('COLLAB_BRANCH', undefined, env);
+    expect('COLLAB_BRANCH' in env).toBe(false);
+    setEnv('COLLAB_BRANCH', 'feature/x', env);
+    expect(env.COLLAB_BRANCH).toBe('feature/x');
+    setEnv('COLLAB_BRANCH', '', env);
+    expect(env.COLLAB_BRANCH).toBeUndefined();
   });
 });

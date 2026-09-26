@@ -121,6 +121,16 @@ const runGit: Git = (cwd, args) => {
  * worktree lands in the same topic as its repo. A submodule is its own repo;
  * outside git it is the folder itself.
  */
+/**
+ * Sets an environment variable for child processes, or removes it. Assigning
+ * undefined to process.env stores the string "undefined", which the daemon
+ * would then report as the session's branch.
+ */
+export function setEnv(name: string, value: string | undefined, env: NodeJS.ProcessEnv = process.env): void {
+  if (value) env[name] = value;
+  else delete env[name];
+}
+
 export function repoName(cwd: string, git: Git = runGit): string {
   const top = git(cwd, ['rev-parse', '--show-toplevel']);
   if (!top) return path.basename(cwd);

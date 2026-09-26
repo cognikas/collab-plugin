@@ -1,7 +1,7 @@
 {
   "name": "collab-channel",
   "displayName": "Collaboration Channel",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "description": "Live channel between interactive Claude Code sessions, organized by topic: messages to a topic or a person, presence, shared context, file claims and finished-work notifications — without handoffs.",
   "author": {
     "name": "Cognikas"

@@ -17285,7 +17285,7 @@ async function callDaemon(clientSessionId, path4, options = {}) {
 }
 
 // src/lib/version.ts
-var PLUGIN_VERSION = "1.0.0-rc.1";
+var PLUGIN_VERSION = "1.0.0-rc.2";
 
 // src/mcp-server.ts
 process.env.COLLAB_CLAUDE_PID = String(process.ppid);
