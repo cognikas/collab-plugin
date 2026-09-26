@@ -6,7 +6,9 @@ allowed-tools: mcp__collab__collab_status, mcp__collab__collab_inbox
 Call `collab_status` and report the result to me compactly:
 
 - whether the channel is connected, and this session's handle and topic
-- who else is online, and in which topics
+- my other sessions, if there are any
+- who else is online, and in which topics; for someone with several sessions, how many and where
+  each one is
 - active claims in this topic, and whether any overlap what we are currently working on
 - how many messages are unread
 

@@ -129,6 +129,29 @@ servidor MCP busca el daemon con su mismo `ppid`. En orden:
    eso el daemon manda.
 3. Daemons sin pid registrado: directorio de trabajo, y si no, el más reciente.
 
+### Una sesión concreta
+
+La `client_session_id` de cada sesión es el `session_id` de Claude Code: la que el hook recibe por
+stdin y el daemon usa como carpeta y manda en el ticket. Desde el protocolo 1.0.0-rc.3 también sale
+del servidor:
+
+- **Presencia:** cada miembro trae `sessions`, con una entrada por sesión viva: id, tema, repo, rama
+  y hora de conexión. `collab_status`, el resumen de `SessionStart` y `cli status` listan las
+  sesiones de cada miembro con su id completo, y las otras sesiones propias.
+- **Remitente:** cada mensaje dice qué sesión lo envió. Se muestra como
+  `willy@beta-1.0 (session <id>)`.
+- **Destinatario:** `collab_send` y `collab_done` aceptan `session`. El servidor MCP la resuelve con
+  `resolveSessionTarget` (`src/lib/sessions.ts`) contra la presencia que tiene el daemon:
+  - la sesión tiene que estar conectada;
+  - si falta `user`, lo deduce;
+  - rechaza un `topic` que no coincide con el de la sesión.
+
+  Si ningún miembro trae `sessions`, el servidor es anterior a rc.3 y descartaría el campo,
+  repartiendo el mensaje a todas las sesiones del miembro. En ese caso la herramienta se niega en
+  lugar de ampliar el reparto en silencio.
+- **Mensaje para esta sesión:** se muestra como `→ you (this session)`, comparando con la id propia
+  que el daemon expone en `GET /status`.
+
 ### El guard anti-bucle del hook `Stop`
 
 El guard es propio y tiene dos capas:

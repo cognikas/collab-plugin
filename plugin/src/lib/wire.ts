@@ -76,10 +76,12 @@ export function toMessage(message: WireMessage): Message {
     fromName: message.fromName,
     fromHandle: message.fromHandle,
     fromTopic: message.fromTopic,
+    ...(message.fromClientSessionId ? { fromClientSessionId: message.fromClientSessionId } : {}),
     to: {
       ...(message.to?.memberId ? { memberId: message.to.memberId } : {}),
       ...(message.to?.handle ? { handle: message.to.handle } : {}),
       ...(message.to?.topic ? { topic: message.to.topic } : {}),
+      ...(message.to?.clientSessionId ? { clientSessionId: message.to.clientSessionId } : {}),
     },
     type: messageTypeOf(message.type),
     text: message.text,
@@ -109,6 +111,13 @@ export function toMember(member: WireMember): Member {
     connections: member.connections,
     topics: [...member.topics],
     lastSeenAt: ms(member.lastSeenAt),
+    sessions: member.sessions.map((session) => ({
+      clientSessionId: session.clientSessionId,
+      topic: session.topic,
+      repo: opt(session.repo),
+      branch: opt(session.branch),
+      connectedAt: ms(session.connectedAt),
+    })),
   };
 }
 
@@ -163,7 +172,7 @@ export function toSendRequest(message: OutgoingMessage): SendRequest {
   return create(SendRequestSchema, {
     type: toWireMessageType(message.type),
     text: message.text,
-    to: { handle: message.to.handle ?? '', topic: message.to.topic ?? '' },
+    to: { handle: message.to.handle ?? '', topic: message.to.topic ?? '', clientSessionId: message.to.clientSessionId ?? '' },
     urgency: toWireUrgency(message.urgency),
     refs: message.refs ?? [],
     ...(done ? { done } : {}),

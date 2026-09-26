@@ -9,7 +9,9 @@ Send this with `collab_send`: $ARGUMENTS
 Address it:
 - `topic`: everyone else working in a topic, usually this session's own;
 - `user`: one person, by handle, in any topic;
-- both: that person's sessions in that topic.
+- both: that person's sessions in that topic;
+- `session`: just one of a person's sessions, by the full id `collab_status` or their message shows.
+  Use it when they have several sessions open, or to answer exactly the session that wrote.
 
 If I named a person or a topic, use it. Otherwise send it to this session's topic. If you don't know
 the handles or topics, check `collab_status` first.

@@ -315,6 +315,7 @@ class Daemon {
           self: this.creds.memberId,
           displayName: this.creds.displayName,
           topic: this.origin.topic,
+          clientSessionId: this.origin.clientSessionId,
         });
 
       case 'POST /send':

@@ -7,11 +7,14 @@
  *   node scripts/fake-peer.mjs join   --endpoint <url> --invite <code> --name bruno
  *   node scripts/fake-peer.mjs send   --text "finished /login" --type done --to-topic collab-global
  *   node scripts/fake-peer.mjs send   --text "a word with you" --to-user carlos
+ *   node scripts/fake-peer.mjs send   --text "just you" --to-user carlos --to-session <client session id>
  *   node scripts/fake-peer.mjs state
  *   node scripts/fake-peer.mjs watch                       # stay connected over WebSocket
  *
  * Every command runs as one session in one topic: --topic (default "general"),
- * --session (default "fake-peer"). A message needs --to-user, --to-topic, or both.
+ * --session (default "fake-peer"). A message needs --to-user, --to-topic, or both; --to-session
+ * (with --to-user) narrows it to that one session. Run two with different --session values to act
+ * as one member with two sessions.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -79,7 +82,7 @@ switch (command) {
       text,
       urgency: `URGENCY_${upper(args.urgency ?? 'normal')}`,
       refs: args.refs ? String(args.refs).split(',') : [],
-      to: { handle: args['to-user'] ?? '', topic: args['to-topic'] ?? '' },
+      to: { handle: args['to-user'] ?? '', topic: args['to-topic'] ?? '', clientSessionId: args['to-session'] ?? '' },
       ...(type === 'done' ? { done: { task: text } } : {}),
     }, creds);
     console.log(`sent #${result.seq} to ${result.delivered ?? 0} live session(s)${result.deliveredOffline ? ' (nobody else online: went out as an offline notice)' : ''}`);
@@ -125,12 +128,14 @@ switch (command) {
         console.log(`subscribed as ${creds.displayName} on ${creds.channel}, topic ${topic} (server ${frame.hello.serverVersion ?? '?'})`);
       } else if (frame.message) {
         const m = frame.message;
-        const to = [m.to?.handle, m.to?.topic && `#${m.to.topic}`].filter(Boolean).join(' in ');
+        const to = [m.to?.handle, m.to?.topic && `#${m.to.topic}`].filter(Boolean).join(' in ')
+          + (m.to?.clientSessionId ? ` (session ${m.to.clientSessionId})` : '');
+        const from = `${m.fromHandle}@${m.fromTopic}${m.fromClientSessionId ? ` (session ${m.fromClientSessionId})` : ''}`;
         const type = String(m.type ?? 'MESSAGE_TYPE_NOTE').replace('MESSAGE_TYPE_', '').toLowerCase();
-        console.log(`  <- #${m.seq} ${m.fromHandle}@${m.fromTopic} → ${to} [${type}]: ${String(m.text ?? '').replace(/\r?\n/g, ' / ')}`);
+        console.log(`  <- #${m.seq} ${from} → ${to} [${type}]: ${String(m.text ?? '').replace(/\r?\n/g, ' / ')}`);
       } else if (frame.presence) {
         const members = frame.presence.members ?? [];
-        console.log(`  <- presence: ${members.map((m) => `${m.handle}:${String(m.status ?? '').replace('MEMBER_STATUS_', '').toLowerCase()}${m.topics?.length ? `@${m.topics.join('|')}` : ''}`).join(', ')}`);
+        console.log(`  <- presence: ${members.map((m) => `${m.handle}:${String(m.status ?? '').replace('MEMBER_STATUS_', '').toLowerCase()}${m.topics?.length ? `@${m.topics.join('|')}` : ''}${m.sessions?.length ? ` [${m.sessions.map((s) => s.clientSessionId).join(', ')}]` : ''}`).join(', ')}`);
       } else if (frame.error) {
         console.log(`  <- error ${frame.error.code}: ${frame.error.message}`);
       }

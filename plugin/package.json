@@ -1,6 +1,6 @@
 {
   "name": "@collab/plugin",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0-rc.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@collab/protocol": "github:cognikas/collab-protocol#v1.0.0-rc.2&path:/ts",
+    "@collab/protocol": "github:cognikas/collab-protocol#v1.0.0-rc.3&path:/ts",
     "@modelcontextprotocol/sdk": "1.30.0",
     "ws": "^8.21.3"
   },
