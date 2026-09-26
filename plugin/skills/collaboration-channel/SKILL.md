@@ -24,9 +24,12 @@ Every `collab_send` and `collab_done` says who it is for. There is no channel-wi
 - `user: "<handle>"`: every session of that member, whatever topic they are in. Use it for
   something personal to them, or when you don't know where they are.
 - both: only that member's sessions in that topic.
+- `session: "<id>"`, with or without `user`: just that one session. A member can have several
+  sessions open, even in the same topic; `collab_status` lists each one with its full id. It must
+  be connected right now.
 
-Each message you receive shows who sent it as `handle@topic`, so a reply can go straight back
-there.
+Each message you receive shows who sent it as `handle@topic (session <id>)`. A reply to `user`
+reaches that person; add `session` to reach only the session that wrote to you.
 
 ## When to reach for the channel
 

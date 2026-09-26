@@ -143,6 +143,8 @@ const status = await call('collab_status');
 check('collab_status responds', !status.isError, status.content?.[0]?.text);
 console.log(`    ${status.content?.[0]?.text?.split('\n').join('\n    ')}`);
 check('collab_status names the topic', status.content?.[0]?.text?.includes('in topic mcp-check-topic'), status.content?.[0]?.text);
+check('collab_status names this session', /in topic mcp-check-topic, session \S+/.test(status.content?.[0]?.text ?? ''),
+  status.content?.[0]?.text);
 
 // Low, because nobody else is on this channel: a normal one would go out by email.
 const sent = await call('collab_send', { text: 'hello from mcp-check', topic: 'mcp-check-topic', urgency: 'low' });
@@ -154,6 +156,10 @@ check('collab_send to a user works', !toSelf.isError, toSelf.content?.[0]?.text)
 const unaddressed = await call('collab_send', { text: 'to whom?' });
 check('collab_send without a recipient is an error that says how to address',
   unaddressed.isError === true && /topic/.test(unaddressed.content?.[0]?.text ?? ''), unaddressed.content?.[0]?.text);
+
+const notConnected = await call('collab_send', { text: 'hi', user: 'mcp-check', session: 'not-connected-1' });
+check('collab_send to a session that is not connected is refused before sending',
+  notConnected.isError === true && /not connected/.test(notConnected.content?.[0]?.text ?? ''), notConnected.content?.[0]?.text);
 
 const unknownUser = await call('collab_send', { text: 'hi', user: 'nobody-here' });
 check('collab_send to an unknown handle is an error', unknownUser.isError === true && /UNKNOWN_HANDLE|No member/.test(unknownUser.content?.[0]?.text ?? ''),

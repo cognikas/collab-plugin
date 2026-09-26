@@ -21,6 +21,8 @@ export interface Addressee {
   memberId?: string;
   handle?: string;
   topic?: string;
+  /** The one session of `memberId` it is for. */
+  clientSessionId?: string;
 }
 
 export interface Message {
@@ -31,6 +33,8 @@ export interface Message {
   fromHandle: string;
   /** Topic of the session that sent it, so a reply can go back to exactly there. */
   fromTopic: string;
+  /** The session that sent it, so a reply can go back to exactly that session. */
+  fromClientSessionId?: string;
   to: Addressee;
   type: MessageType;
   text: string;
@@ -54,6 +58,20 @@ export interface Member {
   connections: number;
   topics: string[];
   lastSeenAt: number;
+  /**
+   * Live sessions with a socket, oldest first, this developer's own included.
+   * Absent from a server older than protocol 1.0.0-rc.3 and from older state files.
+   */
+  sessions?: MemberSession[];
+}
+
+/** One live session of a member: a Claude Code session, addressable on its own. */
+export interface MemberSession {
+  clientSessionId: string;
+  topic: string;
+  repo?: string;
+  branch?: string;
+  connectedAt: number;
 }
 
 export interface Claim {
@@ -99,7 +117,7 @@ export interface ChannelSnapshot {
 export interface OutgoingMessage {
   type?: 'note' | 'question' | 'done';
   text: string;
-  to: { handle?: string; topic?: string };
+  to: { handle?: string; topic?: string; clientSessionId?: string };
   urgency?: Urgency;
   refs?: string[];
   done?: { task: string; automatic?: boolean };

@@ -4175,9 +4175,9 @@ var NullValue;
   NullValue2[NullValue2["NULL_VALUE"] = 0] = "NULL_VALUE";
 })(NullValue || (NullValue = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_bd2b73f8d23ee17ae6fde66039b57663/node_modules/@collab/protocol/dist/gen/collab/v1/model_pb.js
-var file_collab_v1_model = /* @__PURE__ */ fileDesc("ChVjb2xsYWIvdjEvbW9kZWwucHJvdG8SCWNvbGxhYi52MSIqCglSZWNpcGllbnQSDgoGaGFuZGxlGAEgASgJEg0KBXRvcGljGAIgASgJIj0KCUFkZHJlc3NlZRIRCgltZW1iZXJfaWQYASABKAkSDgoGaGFuZGxlGAIgASgJEg0KBXRvcGljGAMgASgJIuoDCgdNZXNzYWdlEgsKA3NlcRgBIAEoDRIPCgdjaGFubmVsGAIgASgJEhYKDmZyb21fbWVtYmVyX2lkGAMgASgJEhEKCWZyb21fbmFtZRgEIAEoCRITCgtmcm9tX2hhbmRsZRgFIAEoCRISCgpmcm9tX3RvcGljGAYgASgJEiAKAnRvGAcgASgLMhQuY29sbGFiLnYxLkFkZHJlc3NlZRIkCgR0eXBlGAggASgOMhYuY29sbGFiLnYxLk1lc3NhZ2VUeXBlEgwKBHRleHQYCSABKAkSIwoHdXJnZW5jeRgKIAEoDjISLmNvbGxhYi52MS5VcmdlbmN5EgwKBHJlZnMYCyADKAkSKwoHc2VudF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASJgoEZG9uZRgUIAEoCzIWLmNvbGxhYi52MS5Eb25lUGF5bG9hZEgAEigKBWNsYWltGBUgASgLMhcuY29sbGFiLnYxLkNsYWltUGF5bG9hZEgAEiwKB3JlbGVhc2UYFiABKAsyGS5jb2xsYWIudjEuUmVsZWFzZVBheWxvYWRIABIsCgdjb250ZXh0GBcgASgLMhkuY29sbGFiLnYxLkNvbnRleHRQYXlsb2FkSABCCQoHcGF5bG9hZCIuCgtEb25lUGF5bG9hZBIMCgR0YXNrGAEgASgJEhEKCWF1dG9tYXRpYxgCIAEoCCJQCgxDbGFpbVBheWxvYWQSEAoIY2xhaW1faWQYASABKAkSLgoKZXhwaXJlc19hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiIgoOUmVsZWFzZVBheWxvYWQSEAoIY2xhaW1faWQYASABKAkiLgoOQ29udGV4dFBheWxvYWQSCwoDa2V5GAEgASgJEg8KB3ZlcnNpb24YAiABKA0i3wEKBk1lbWJlchIRCgltZW1iZXJfaWQYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEg4KBmhhbmRsZRgDIAEoCRInCgZzdGF0dXMYBCABKA4yFy5jb2xsYWIudjEuTWVtYmVyU3RhdHVzEgwKBHJlcG8YBSABKAkSDgoGYnJhbmNoGAYgASgJEhMKC2Nvbm5lY3Rpb25zGAcgASgNEg4KBnRvcGljcxgIIAMoCRIwCgxsYXN0X3NlZW5fYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wItIBCgVDbGFpbRIQCghjbGFpbV9pZBgBIAEoCRIXCg9vd25lcl9tZW1iZXJfaWQYAiABKAkSEgoKb3duZXJfbmFtZRgDIAEoCRINCgV0b3BpYxgEIAEoCRINCgVwYXRocxgFIAMoCRIMCgRub3RlGAYgASgJEi4KCmNyZWF0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCmV4cGlyZXNfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIrkBCgxDb250ZXh0RW50cnkSCwoDa2V5GAEgASgJEg8KB3ZlcnNpb24YAiABKA0SDQoFdGl0bGUYAyABKAkSDwoHc3VtbWFyeRgEIAEoCRIMCgRib2R5GAUgASgJEhgKEGF1dGhvcl9tZW1iZXJfaWQYBiABKAkSEwoLYXV0aG9yX25hbWUYByABKAkSLgoKY3JlYXRlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAikwEKDkNvbnRleHRTdW1tYXJ5EgsKA2tleRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgNEg0KBXRpdGxlGAMgASgJEg8KB3N1bW1hcnkYBCABKAkSEwoLYXV0aG9yX25hbWUYBSABKAkSLgoKY3JlYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAimAIKDENoYW5uZWxTdGF0ZRIPCgdjaGFubmVsGAEgASgJEhYKDnNlbGZfbWVtYmVyX2lkGAIgASgJEg4KBmhhbmRsZRgDIAEoCRINCgV0b3BpYxgEIAEoCRIiCgdtZW1iZXJzGAUgAygLMhEuY29sbGFiLnYxLk1lbWJlchIgCgZjbGFpbXMYBiADKAsyEC5jb2xsYWIudjEuQ2xhaW0SMAoNY29udGV4dF9pbmRleBgHIAMoCzIZLmNvbGxhYi52MS5Db250ZXh0U3VtbWFyeRIkCghtZXNzYWdlcxgIIAMoCzISLmNvbGxhYi52MS5NZXNzYWdlEg4KBmN1cnNvchgJIAEoDRISCgpsYXRlc3Rfc2VxGAogASgNIi8KD1Byb3RvY29sVmVyc2lvbhINCgVtYWpvchgBIAEoDRINCgVtaW5vchgCIAEoDSJvCgpDbGllbnRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRIsCghwcm90b2NvbBgDIAEoCzIaLmNvbGxhYi52MS5Qcm90b2NvbFZlcnNpb24SFAoMY2FwYWJpbGl0aWVzGAQgAygJKlkKB1VyZ2VuY3kSFwoTVVJHRU5DWV9VTlNQRUNJRklFRBAAEg8KC1VSR0VOQ1lfTE9XEAESEgoOVVJHRU5DWV9OT1JNQUwQAhIQCgxVUkdFTkNZX0hJR0gQAyrAAQoLTWVzc2FnZVR5cGUSHAoYTUVTU0FHRV9UWVBFX1VOU1BFQ0lGSUVEEAASFQoRTUVTU0FHRV9UWVBFX05PVEUQARIZChVNRVNTQUdFX1RZUEVfUVVFU1RJT04QAhIVChFNRVNTQUdFX1RZUEVfRE9ORRADEhYKEk1FU1NBR0VfVFlQRV9DTEFJTRAEEhgKFE1FU1NBR0VfVFlQRV9SRUxFQVNFEAUSGAoUTUVTU0FHRV9UWVBFX0NPTlRFWFQQBip6CgxNZW1iZXJTdGF0dXMSHQoZTUVNQkVSX1NUQVRVU19VTlNQRUNJRklFRBAAEhgKFE1FTUJFUl9TVEFUVVNfT05MSU5FEAESFgoSTUVNQkVSX1NUQVRVU19JRExFEAISGQoVTUVNQkVSX1NUQVRVU19PRkZMSU5FEANiBnByb3RvMw", [file_google_protobuf_timestamp]);
-var ProtocolVersionSchema = /* @__PURE__ */ messageDesc(file_collab_v1_model, 12);
+// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/gen/collab/v1/model_pb.js
+var file_collab_v1_model = /* @__PURE__ */ fileDesc("ChVjb2xsYWIvdjEvbW9kZWwucHJvdG8SCWNvbGxhYi52MSJFCglSZWNpcGllbnQSDgoGaGFuZGxlGAEgASgJEg0KBXRvcGljGAIgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAMgASgJIlgKCUFkZHJlc3NlZRIRCgltZW1iZXJfaWQYASABKAkSDgoGaGFuZGxlGAIgASgJEg0KBXRvcGljGAMgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAQgASgJIooECgdNZXNzYWdlEgsKA3NlcRgBIAEoDRIPCgdjaGFubmVsGAIgASgJEhYKDmZyb21fbWVtYmVyX2lkGAMgASgJEhEKCWZyb21fbmFtZRgEIAEoCRITCgtmcm9tX2hhbmRsZRgFIAEoCRISCgpmcm9tX3RvcGljGAYgASgJEiAKAnRvGAcgASgLMhQuY29sbGFiLnYxLkFkZHJlc3NlZRIkCgR0eXBlGAggASgOMhYuY29sbGFiLnYxLk1lc3NhZ2VUeXBlEgwKBHRleHQYCSABKAkSIwoHdXJnZW5jeRgKIAEoDjISLmNvbGxhYi52MS5VcmdlbmN5EgwKBHJlZnMYCyADKAkSKwoHc2VudF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHgoWZnJvbV9jbGllbnRfc2Vzc2lvbl9pZBgNIAEoCRImCgRkb25lGBQgASgLMhYuY29sbGFiLnYxLkRvbmVQYXlsb2FkSAASKAoFY2xhaW0YFSABKAsyFy5jb2xsYWIudjEuQ2xhaW1QYXlsb2FkSAASLAoHcmVsZWFzZRgWIAEoCzIZLmNvbGxhYi52MS5SZWxlYXNlUGF5bG9hZEgAEiwKB2NvbnRleHQYFyABKAsyGS5jb2xsYWIudjEuQ29udGV4dFBheWxvYWRIAEIJCgdwYXlsb2FkIi4KC0RvbmVQYXlsb2FkEgwKBHRhc2sYASABKAkSEQoJYXV0b21hdGljGAIgASgIIlAKDENsYWltUGF5bG9hZBIQCghjbGFpbV9pZBgBIAEoCRIuCgpleHBpcmVzX2F0GAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIiCg5SZWxlYXNlUGF5bG9hZBIQCghjbGFpbV9pZBgBIAEoCSIuCg5Db250ZXh0UGF5bG9hZBILCgNrZXkYASABKAkSDwoHdmVyc2lvbhgCIAEoDSKLAgoGTWVtYmVyEhEKCW1lbWJlcl9pZBgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkSDgoGaGFuZGxlGAMgASgJEicKBnN0YXR1cxgEIAEoDjIXLmNvbGxhYi52MS5NZW1iZXJTdGF0dXMSDAoEcmVwbxgFIAEoCRIOCgZicmFuY2gYBiABKAkSEwoLY29ubmVjdGlvbnMYByABKA0SDgoGdG9waWNzGAggAygJEjAKDGxhc3Rfc2Vlbl9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKgoIc2Vzc2lvbnMYCiADKAsyGC5jb2xsYWIudjEuTWVtYmVyU2Vzc2lvbiKJAQoNTWVtYmVyU2Vzc2lvbhIZChFjbGllbnRfc2Vzc2lvbl9pZBgBIAEoCRINCgV0b3BpYxgCIAEoCRIMCgRyZXBvGAMgASgJEg4KBmJyYW5jaBgEIAEoCRIwCgxjb25uZWN0ZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wItIBCgVDbGFpbRIQCghjbGFpbV9pZBgBIAEoCRIXCg9vd25lcl9tZW1iZXJfaWQYAiABKAkSEgoKb3duZXJfbmFtZRgDIAEoCRINCgV0b3BpYxgEIAEoCRINCgVwYXRocxgFIAMoCRIMCgRub3RlGAYgASgJEi4KCmNyZWF0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCmV4cGlyZXNfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIrkBCgxDb250ZXh0RW50cnkSCwoDa2V5GAEgASgJEg8KB3ZlcnNpb24YAiABKA0SDQoFdGl0bGUYAyABKAkSDwoHc3VtbWFyeRgEIAEoCRIMCgRib2R5GAUgASgJEhgKEGF1dGhvcl9tZW1iZXJfaWQYBiABKAkSEwoLYXV0aG9yX25hbWUYByABKAkSLgoKY3JlYXRlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAikwEKDkNvbnRleHRTdW1tYXJ5EgsKA2tleRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgNEg0KBXRpdGxlGAMgASgJEg8KB3N1bW1hcnkYBCABKAkSEwoLYXV0aG9yX25hbWUYBSABKAkSLgoKY3JlYXRlZF9hdBgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAimAIKDENoYW5uZWxTdGF0ZRIPCgdjaGFubmVsGAEgASgJEhYKDnNlbGZfbWVtYmVyX2lkGAIgASgJEg4KBmhhbmRsZRgDIAEoCRINCgV0b3BpYxgEIAEoCRIiCgdtZW1iZXJzGAUgAygLMhEuY29sbGFiLnYxLk1lbWJlchIgCgZjbGFpbXMYBiADKAsyEC5jb2xsYWIudjEuQ2xhaW0SMAoNY29udGV4dF9pbmRleBgHIAMoCzIZLmNvbGxhYi52MS5Db250ZXh0U3VtbWFyeRIkCghtZXNzYWdlcxgIIAMoCzISLmNvbGxhYi52MS5NZXNzYWdlEg4KBmN1cnNvchgJIAEoDRISCgpsYXRlc3Rfc2VxGAogASgNIi8KD1Byb3RvY29sVmVyc2lvbhINCgVtYWpvchgBIAEoDRINCgVtaW5vchgCIAEoDSJvCgpDbGllbnRJbmZvEgwKBG5hbWUYASABKAkSDwoHdmVyc2lvbhgCIAEoCRIsCghwcm90b2NvbBgDIAEoCzIaLmNvbGxhYi52MS5Qcm90b2NvbFZlcnNpb24SFAoMY2FwYWJpbGl0aWVzGAQgAygJKlkKB1VyZ2VuY3kSFwoTVVJHRU5DWV9VTlNQRUNJRklFRBAAEg8KC1VSR0VOQ1lfTE9XEAESEgoOVVJHRU5DWV9OT1JNQUwQAhIQCgxVUkdFTkNZX0hJR0gQAyrAAQoLTWVzc2FnZVR5cGUSHAoYTUVTU0FHRV9UWVBFX1VOU1BFQ0lGSUVEEAASFQoRTUVTU0FHRV9UWVBFX05PVEUQARIZChVNRVNTQUdFX1RZUEVfUVVFU1RJT04QAhIVChFNRVNTQUdFX1RZUEVfRE9ORRADEhYKEk1FU1NBR0VfVFlQRV9DTEFJTRAEEhgKFE1FU1NBR0VfVFlQRV9SRUxFQVNFEAUSGAoUTUVTU0FHRV9UWVBFX0NPTlRFWFQQBip6CgxNZW1iZXJTdGF0dXMSHQoZTUVNQkVSX1NUQVRVU19VTlNQRUNJRklFRBAAEhgKFE1FTUJFUl9TVEFUVVNfT05MSU5FEAESFgoSTUVNQkVSX1NUQVRVU19JRExFEAISGQoVTUVNQkVSX1NUQVRVU19PRkZMSU5FEANiBnByb3RvMw", [file_google_protobuf_timestamp]);
+var ProtocolVersionSchema = /* @__PURE__ */ messageDesc(file_collab_v1_model, 13);
 var Urgency;
 (function(Urgency2) {
   Urgency2[Urgency2["UNSPECIFIED"] = 0] = "UNSPECIFIED";
@@ -4203,7 +4203,7 @@ var MemberStatus;
   MemberStatus2[MemberStatus2["OFFLINE"] = 3] = "OFFLINE";
 })(MemberStatus || (MemberStatus = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_bd2b73f8d23ee17ae6fde66039b57663/node_modules/@collab/protocol/dist/gen/collab/v1/errors_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/gen/collab/v1/errors_pb.js
 var file_collab_v1_errors = /* @__PURE__ */ fileDesc("ChZjb2xsYWIvdjEvZXJyb3JzLnByb3RvEgljb2xsYWIudjEiVgoLRXJyb3JEZXRhaWwSIgoEY29kZRgBIAEoDjIULmNvbGxhYi52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRISCgpyZXF1ZXN0X2lkGAMgASgJKt8FCglFcnJvckNvZGUSGgoWRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEhcKE0VSUk9SX0NPREVfSU5URVJOQUwQARIaChZFUlJPUl9DT0RFX0JBRF9SRVFVRVNUEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIeChpFUlJPUl9DT0RFX1VOQVVUSEVOVElDQVRFRBAEEhYKEkVSUk9SX0NPREVfUkVWT0tFRBAFEiMKH0VSUk9SX0NPREVfVU5TVVBQT1JURURfUFJPVE9DT0wQBhIhCh1FUlJPUl9DT0RFX1VOS05PV05fQ09OTkVDVElPThAHEh0KGUVSUk9SX0NPREVfSU5WQUxJRF9JTlZJVEUQCBIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAJEhkKFUVSUk9SX0NPREVfTkFNRV9UQUtFThAKEh4KGkVSUk9SX0NPREVfSU5WQUxJRF9DSEFOTkVMEAsSHAoYRVJST1JfQ09ERV9JTlZBTElEX1RPUElDEAwSJQohRVJST1JfQ09ERV9JTlZBTElEX0NMSUVOVF9TRVNTSU9OEA0SHQoZRVJST1JfQ09ERV9JTlZBTElEX01FTUJFUhAOEhsKF0VSUk9SX0NPREVfTk9fUkVDSVBJRU5UEA8SHQoZRVJST1JfQ09ERV9VTktOT1dOX0hBTkRMRRAQEhwKGEVSUk9SX0NPREVfRU1QVFlfTUVTU0FHRRAREh8KG0VSUk9SX0NPREVfTUVTU0FHRV9UT09fTE9ORxASEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9UWVBFEBMSFwoTRVJST1JfQ09ERV9OT19QQVRIUxAUEh0KGUVSUk9SX0NPREVfVE9PX01BTllfUEFUSFMQFRIaChZFUlJPUl9DT0RFX0lOVkFMSURfS0VZEBYSIAocRVJST1JfQ09ERV9DT05URVhUX1RPT19MQVJHRRAXYgZwcm90bzM");
 var ErrorDetailSchema = /* @__PURE__ */ messageDesc(file_collab_v1_errors, 0);
 var ErrorCode;
@@ -4234,16 +4234,20 @@ var ErrorCode;
   ErrorCode2[ErrorCode2["CONTEXT_TOO_LARGE"] = 23] = "CONTEXT_TOO_LARGE";
 })(ErrorCode || (ErrorCode = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_bd2b73f8d23ee17ae6fde66039b57663/node_modules/@collab/protocol/dist/gen/collab/v1/membership_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/gen/collab/v1/membership_pb.js
 var file_collab_v1_membership = /* @__PURE__ */ fileDesc("Chpjb2xsYWIvdjEvbWVtYmVyc2hpcC5wcm90bxIJY29sbGFiLnYxIjMKC0pvaW5SZXF1ZXN0Eg4KBmludml0ZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkifQoMSm9pblJlc3BvbnNlEhEKCW1lbWJlcl9pZBgBIAEoCRIOCgZzZWNyZXQYAiABKAkSDwoHY2hhbm5lbBgDIAEoCRIUCgxkaXNwbGF5X25hbWUYBCABKAkSDgoGaGFuZGxlGAUgASgJEhMKC3dzX2VuZHBvaW50GAYgASgJMkwKEU1lbWJlcnNoaXBTZXJ2aWNlEjcKBEpvaW4SFi5jb2xsYWIudjEuSm9pblJlcXVlc3QaFy5jb2xsYWIudjEuSm9pblJlc3BvbnNlYgZwcm90bzM");
 var MembershipService = /* @__PURE__ */ serviceDesc(file_collab_v1_membership, 0);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_bd2b73f8d23ee17ae6fde66039b57663/node_modules/@collab/protocol/dist/names.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/names.js
+var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 var MAX_NAME_CHARS = 64;
 function slug(value, max = MAX_NAME_CHARS) {
   if (typeof value !== "string")
     return "";
   return value.normalize("NFKD").replace(new RegExp("\\p{M}+", "gu"), "").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^[._-]+/, "").slice(0, max).replace(/-+$/, "");
+}
+function isClientSessionId(value) {
+  return typeof value === "string" && CLIENT_SESSION_ID.test(value);
 }
 
 // ../node_modules/.pnpm/@bufbuild+protobuf@2.15.0/node_modules/@bufbuild/protobuf/dist/esm/extensions.js
@@ -5637,7 +5641,7 @@ function listValueFromJson(listValue, json, ctx) {
   }
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_bd2b73f8d23ee17ae6fde66039b57663/node_modules/@collab/protocol/dist/version.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/version.js
 var PROTOCOL_MAJOR = 1;
 var PROTOCOL_MINOR = 0;
 var PROTOCOL = create(ProtocolVersionSchema, { major: PROTOCOL_MAJOR, minor: PROTOCOL_MINOR });
@@ -5645,7 +5649,7 @@ function formatVersion(version) {
   return `${version.major}.${version.minor}`;
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_bd2b73f8d23ee17ae6fde66039b57663/node_modules/@collab/protocol/dist/json.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/json.js
 var READ = { ignoreUnknownFields: true };
 function encode(schema, message) {
   return toJsonString(schema, message);
@@ -5654,7 +5658,7 @@ function decode(schema, text) {
   return fromJsonString(schema, text, READ);
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_bd2b73f8d23ee17ae6fde66039b57663/node_modules/@collab/protocol/dist/http.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/http.js
 function rpcPath(method) {
   return `/${method.parent.typeName}/${method.name}`;
 }
@@ -5947,13 +5951,37 @@ function ago(ts) {
   if (seconds < 3600) return `${Math.round(seconds / 60)}m ago`;
   return `${Math.round(seconds / 3600)}h ago`;
 }
+function sessionId(value) {
+  return value && isClientSessionId(value) ? value : void 0;
+}
 function renderMember(member, self) {
   const name = flattenForContext(member.handle || member.displayName);
   const who = member.memberId === self ? `${name} (you)` : name;
-  const where = [member.repo, member.branch].filter(Boolean).map((part) => flattenForContext(part)).join("@");
+  const sessions = liveSessions(member);
+  if (sessions.length > 0) {
+    return `${who} \u2014 ${member.status}, ${sessions.length} session${sessions.length === 1 ? "" : "s"}`;
+  }
+  const where = location(member.repo, member.branch);
   const topics = member.topics?.length ? ` in ${member.topics.map(flattenForContext).join(", ")}` : "";
   const status = member.status === "online" ? `online${topics}` : `offline, last seen ${ago(member.lastSeenAt)}`;
   return `${who} \u2014 ${status}${where ? ` \u2014 ${where}` : ""}`;
+}
+function liveSessions(member) {
+  return member.status === "offline" ? [] : (member.sessions ?? []).filter((s) => sessionId(s.clientSessionId));
+}
+function renderSession(session, ownSession = "") {
+  const where = location(session.repo, session.branch);
+  const mine = session.clientSessionId === ownSession ? " (this session)" : "";
+  return `session ${session.clientSessionId}${mine} in ${flattenForContext(session.topic)}${where ? ` \u2014 ${where}` : ""} \u2014 connected ${ago(session.connectedAt)}`;
+}
+function renderMemberLines(member, self, ownSession = "", indent = "  ") {
+  return [
+    `${indent}- ${renderMember(member, self)}`,
+    ...liveSessions(member).map((session) => `${indent}    ${renderSession(session, ownSession)}`)
+  ];
+}
+function location(repo, branch) {
+  return [repo, branch].filter(Boolean).map((part) => flattenForContext(part)).join("@");
 }
 
 // src/cli.ts
@@ -6008,9 +6036,14 @@ async function cmdStatus() {
   console.log(`You: ${fresh.handle || "(unknown)"}, in topic ${fresh.topic || "(not resolved yet)"}`);
   if (fresh.server) console.log(`Server: ${fresh.server}`);
   if (fresh.lastError) console.log(`Last error: ${fresh.lastError}`);
+  console.log(`Session: ${clientSessionId}`);
+  const me = fresh.members.find((m) => m.memberId === fresh.self);
+  const others = me ? liveSessions(me).filter((s) => s.clientSessionId !== clientSessionId) : [];
+  if (others.length > 0) console.log(`Your other sessions:
+${others.map((s) => `  - ${renderSession(s)}`).join("\n")}`);
   const peers = fresh.members.filter((m) => m.memberId !== fresh.self);
   console.log(peers.length > 0 ? `Members:
-${peers.map((m) => `  - ${renderMember(m, fresh.self)}`).join("\n")}` : "Members: none yet");
+${peers.flatMap((m) => renderMemberLines(m, fresh.self, clientSessionId)).join("\n")}` : "Members: none yet");
   console.log(fresh.claims.length > 0 ? `Claims in this topic:
 ${fresh.claims.map((c) => `  - ${c.ownerName}: ${c.paths.join(", ")}`).join("\n")}` : "Claims in this topic: none");
   console.log(`Shared context in this topic: ${fresh.contextIndex.length} entries`);

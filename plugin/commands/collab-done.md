@@ -15,6 +15,6 @@ Include:
   changes their assumptions
 - `artifacts`: the files, endpoints, branches or PRs produced
 - who it is for: `topic` for everyone working in that topic (by default this session's own), `user`
-  for one person in any topic, or both
+  for one person in any topic, or both; add `session` for just one of that person's sessions
 
 Then check `collab_claims`: if I hold claims covering work that is now finished, release them.

@@ -12,7 +12,7 @@ import {
   credentialsPath, dataDir, readConfig, resolveCredentials, resolveTopic, sessionDir, writeCredentials, type Credentials,
 } from './lib/config.js';
 import { callDaemon, ensureDaemon } from './lib/daemon-client.js';
-import { renderMember } from './lib/render.js';
+import { liveSessions, renderMemberLines, renderSession } from './lib/render.js';
 import { readDaemonInfo, readLocalState, unreadMessages } from './lib/state.js';
 
 const clientSessionId = process.env.COLLAB_CLIENT_SESSION_ID ?? 'default';
@@ -73,9 +73,14 @@ async function cmdStatus(): Promise<number> {
   if (fresh.server) console.log(`Server: ${fresh.server}`);
   if (fresh.lastError) console.log(`Last error: ${fresh.lastError}`);
 
+  console.log(`Session: ${clientSessionId}`);
+  const me = fresh.members.find((m) => m.memberId === fresh.self);
+  const others = me ? liveSessions(me).filter((s) => s.clientSessionId !== clientSessionId) : [];
+  if (others.length > 0) console.log(`Your other sessions:\n${others.map((s) => `  - ${renderSession(s)}`).join('\n')}`);
+
   const peers = fresh.members.filter((m) => m.memberId !== fresh.self);
   console.log(peers.length > 0
-    ? `Members:\n${peers.map((m) => `  - ${renderMember(m, fresh.self)}`).join('\n')}`
+    ? `Members:\n${peers.flatMap((m) => renderMemberLines(m, fresh.self, clientSessionId)).join('\n')}`
     : 'Members: none yet');
 
   console.log(fresh.claims.length > 0

@@ -10,7 +10,7 @@ import { isChannelPrompt } from './lib/channel.js';
 import { readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
 import { callDaemon, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
 import {
-  claimConflictReason, renderClaim, renderMember, renderMessage, UNTRUSTED_NOTE,
+  claimConflictReason, liveSessions, renderClaim, renderMemberLines, renderMessage, renderSession, UNTRUSTED_NOTE,
 } from './lib/render.js';
 import {
   flattenForContext, interruptionBatch, pathMatchesClaim, readChannelStatus, readCursor, readLocalState, recentMessages,
@@ -69,12 +69,18 @@ function renderChannelSummary(
       + `${state.connected ? 'connected' : `OFFLINE (working from cache)${state.lastError ? `: ${flattenForContext(state.lastError)}` : ''}`}`,
   ];
 
+  const me = state.members.find((m) => m.memberId === state.self);
+  const others = me ? liveSessions(me).filter((s) => s.clientSessionId !== clientSessionId) : [];
+  lines.push(`This session: ${flattenForContext(clientSessionId)}${others.length > 0
+    ? `. Your other sessions: ${others.map((s) => renderSession(s)).join(' · ')}` : ''}`);
+
   const peers = state.members.filter((m) => m.memberId !== state.self);
   lines.push(peers.length > 0
-    ? `Members: ${peers.map((m) => renderMember(m, state.self)).join(' · ')}`
+    ? ['Members:', ...peers.flatMap((m) => renderMemberLines(m, state.self, clientSessionId))].join('\n')
     : 'Members: nobody else has joined this channel yet');
   lines.push(`Address every collab_send and collab_done: topic "${topic}" reaches the others in this topic, `
-    + 'user "<handle>" every session of that member, both that member\'s sessions in that topic.');
+    + 'user "<handle>" every session of that member, both that member\'s sessions in that topic; '
+    + 'add session "<id>" to reach just that one session.');
 
   if (state.claims.length > 0) {
     lines.push('Files claimed in this topic right now:');
@@ -96,7 +102,7 @@ function renderChannelSummary(
       ? `${messages.length} unread message(s). ${UNTRUSTED_NOTE}`
       : `Last ${messages.length} message(s) on the channel, re-shown because compaction dropped them. `
         + `You have probably seen these already. ${UNTRUSTED_NOTE}`);
-    for (const message of messages.slice(-10)) lines.push(renderMessage(message, state.self));
+    for (const message of messages.slice(-10)) lines.push(renderMessage(message, state.self, clientSessionId));
   }
 
   return {
@@ -218,10 +224,11 @@ function onStop(config: PluginConfig, clientSessionId: string, tracksTurns: bool
       `[collab-channel] ${unread.length} new message(s) arrived on the channel while you were working.`,
       UNTRUSTED_NOTE,
       '',
-      ...unread.map((message) => renderMessage(message, state.self)),
+      ...unread.map((message) => renderMessage(message, state.self, clientSessionId)),
       '',
       'Take them into account now: answer questions, pick up work that was just unblocked, '
-      + 'or acknowledge with the collab_send tool, addressed back to the sender. If nothing is needed, say so briefly and stop.',
+      + 'or acknowledge with the collab_send tool, addressed back to the sender (with its session to reach only the '
+      + 'session that wrote). If nothing is needed, say so briefly and stop.',
     ].join('\n'),
   );
   // Exit code 2 is what blocks the stop and feeds stderr back to the model.
@@ -240,7 +247,7 @@ function onUserPromptSubmit(config: PluginConfig, clientSessionId: string): void
   emit('UserPromptSubmit', {
     additionalContext: [
       `[collab-channel] ${unread.length} message(s) from the channel. ${UNTRUSTED_NOTE}`,
-      ...unread.map((message) => renderMessage(message, state.self)),
+      ...unread.map((message) => renderMessage(message, state.self, clientSessionId)),
     ].join('\n'),
   });
 }
@@ -264,7 +271,7 @@ function onPostToolUse(config: PluginConfig, clientSessionId: string): void {
     additionalContext: [
       `[collab-channel] ${messages.length} message(s) from the channel arrived mid-turn, at least one of them urgent. `
         + UNTRUSTED_NOTE,
-      ...messages.map((message) => renderMessage(message, state.self)),
+      ...messages.map((message) => renderMessage(message, state.self, clientSessionId)),
       'Decide whether this changes what you are doing right now. If it does not, carry on with the current task.',
     ].join('\n'),
   });
