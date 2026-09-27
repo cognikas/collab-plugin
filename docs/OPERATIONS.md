@@ -77,7 +77,9 @@ acordado en el último `hello`.
 | `NAME_TAKEN` al unirse | otro miembro ya tiene ese handle. Elige otro nombre visible; la invitación sigue valiendo |
 | Un mensaje urgente no llega hasta el final del turno | `midturn_min_urgency` está en `off` o por encima de la urgencia del mensaje, o `delivery_mode` es `prompt`/`manual` |
 | Nada se inyecta al terminar el turno | `delivery_mode` está en `manual` o `prompt`, o `stop_min_urgency` es más alta que la urgencia del mensaje |
-| En modo `channel`, un mensaje con la sesión inactiva espera al próximo prompt | la sesión no se arrancó con `--dangerously-load-development-channels plugin:collab-channel@cognikas`, o el push se dio por descartado. `/collab-status` lo dice en la línea `Delivery:` |
+| En modo `channel`, un mensaje con la sesión inactiva espera al próximo prompt | la sesión no se arrancó con `--dangerously-load-development-channels plugin:collab-channel@cognikas`, o el primer push no arrancó ningún turno en 10 minutos. `/collab-status` lo dice en la línea `Delivery:` |
+| Una sesión que ya cerraste sigue en la presencia, y los mensajes a ella «llegan» | su daemon quedó vivo porque el proceso de Claude Code no terminó. Se retira solo: cuando otra sesión arranca en ese proceso, cuando el proceso pasa a ser un spare (`claude bg-spare`), o a los 3 minutos sin servidor MCP del plugin bajo él. A mano: el `pid` está en `sessions/<session_id>/daemon.json` |
+| El tema no cambia después de poner `COLLAB_TOPIC` | el tema se fija cuando el daemon de la sesión arranca. Cambia la próxima vez que la sesión arranca, `--resume` incluido; mientras tanto `/collab-status` avisa de la diferencia |
 
 El estado del modo `channel` vive en `sessions/<session_id>/channel.json`, y lo que ven los hooks del
 turno en curso, en `turn.json`. Los errores del bucle de push van al stderr del servidor MCP:

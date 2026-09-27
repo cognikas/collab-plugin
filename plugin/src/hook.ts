@@ -5,16 +5,15 @@
  * nothing here touches the network: the daemon has already written the channel
  * state to disk, and this only reads it.
  */
-import { execFileSync } from 'node:child_process';
 import { isChannelPrompt } from './lib/channel.js';
-import { readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
-import { callDaemon, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
+import { gitBranch, readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
+import { callDaemon, daemonsToRetire, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
 import {
   claimConflictReason, liveSessions, renderClaim, renderMemberLines, renderMessage, renderSession, UNTRUSTED_NOTE,
 } from './lib/render.js';
 import {
-  flattenForContext, interruptionBatch, pathMatchesClaim, readChannelStatus, readCursor, readLocalState, recentMessages,
-  unreadMessages, writeChannelStatus, writeCursor, writeTurn,
+  flattenForContext, interruptionBatch, listDaemons, pathMatchesClaim, readChannelStatus, readCursor, readLocalState,
+  recentMessages, unreadMessages, writeChannelStatus, writeCursor, writeTurn,
 } from './lib/state.js';
 
 /** Two Stop hooks can fire back to back; never interrupt twice in a row. */
@@ -23,6 +22,10 @@ const BLOCK_COOLDOWN_MS = 4_000;
 interface HookInput {
   session_id?: string;
   hook_event_name?: string;
+  /** SessionStart: `startup`, `resume`, `clear`, `compact` or `fork`. */
+  source?: string;
+  /** Set when the hook fires inside a subagent. */
+  agent_id?: string;
   cwd?: string;
   tool_name?: string;
   tool_input?: Record<string, unknown>;
@@ -138,14 +141,16 @@ function markDelivered(clientSessionId: string, highestSeq: number, extra: Parti
 
 /* ── Events ─────────────────────────────────────────────────────────────── */
 
-function gitBranch(cwd: string): string | undefined {
-  try {
-    return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
-      cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 2_000,
-    }).trim() || undefined;
-  } catch {
-    return undefined;
-  }
+/**
+ * Daemons this session start makes redundant: those of sessions this Claude
+ * Code process ran before, and this session's own when an earlier process
+ * started it (see `daemonsToRetire`). This session's own has to be gone before
+ * `ensureDaemon` looks, or it would simply be reused.
+ */
+async function retireStaleDaemons(clientSessionId: string): Promise<void> {
+  const stale = daemonsToRetire(listDaemons(), { clientSessionId, claudePid: process.ppid });
+  await Promise.all(stale.map((info) => stopDaemon(info, { wait: info.clientSessionId === clientSessionId })
+    .catch(() => undefined)));
 }
 
 async function onSessionStart(
@@ -154,11 +159,16 @@ async function onSessionStart(
   clientSessionId: string,
   tracksTurns: boolean,
 ): Promise<void> {
+  if (input.source === 'compact') return onCompact(config, clientSessionId, tracksTurns);
+
   const cwd = input.cwd ?? process.cwd();
   setEnv('COLLAB_REPO', cwd.split(/[\\/]/).pop());
   setEnv('COLLAB_BRANCH', gitBranch(cwd));
   // The daemon resolves the session's topic from here.
   process.env.COLLAB_CWD = cwd;
+
+  // A subagent shares the session and the process; it retires nothing.
+  if (!input.agent_id) await retireStaleDaemons(clientSessionId);
 
   try {
     await ensureDaemon(clientSessionId);
@@ -277,13 +287,20 @@ function onPostToolUse(config: PluginConfig, clientSessionId: string): void {
   });
 }
 
-/** Compaction drops the channel state that was injected at session start. */
-function onPostCompact(config: PluginConfig, clientSessionId: string): void {
+/**
+ * Compaction drops the channel state that was injected at session start.
+ * Claude Code runs SessionStart again afterwards, with source `compact`, and
+ * that is where context can go back in: PostCompact output cannot carry any.
+ * The daemon is already running, so this only renders from disk.
+ */
+function onCompact(config: PluginConfig, clientSessionId: string, tracksTurns: boolean): void {
   if (config.deliveryMode === 'manual') return;
   // Deliberately does not mark anything delivered: this is a re-show of what was
   // already read, not a delivery.
   const summary = renderChannelSummary(clientSessionId, 'recent');
-  if (summary) emit('PostCompact', { additionalContext: summary.text });
+  if (!summary) return;
+  const notice = tracksTurns ? channelNotice(clientSessionId, { always: true }) : undefined;
+  emit('SessionStart', { additionalContext: notice ? `${summary.text}\n${notice}` : summary.text });
 }
 
 /** Warns before editing a file the peer said they were working on. */
@@ -335,7 +352,10 @@ async function onTaskCompleted(input: HookInput, clientSessionId: string): Promi
 function recordTurn(event: string, input: HookInput, clientSessionId: string, exitCode: number): void {
   const now = Date.now();
   switch (event) {
-    case 'SessionStart': writeTurn(clientSessionId, { busy: false, sessionStartAt: now }); break;
+    case 'SessionStart':
+      // A compaction can come in the middle of a turn: it says nothing about whether one is running.
+      if (input.source !== 'compact') writeTurn(clientSessionId, { busy: false, sessionStartAt: now });
+      break;
     case 'UserPromptSubmit':
       writeTurn(clientSessionId, isChannelPrompt(input.prompt as string | undefined)
         ? { busy: true, activityAt: now }
@@ -387,7 +407,6 @@ async function dispatch(
     case 'Stop': return onStop(config, clientSessionId, tracksTurns);
     case 'UserPromptSubmit': onUserPromptSubmit(config, clientSessionId); return 0;
     case 'PostToolUse': onPostToolUse(config, clientSessionId); return 0;
-    case 'PostCompact': onPostCompact(config, clientSessionId); return 0;
     case 'PreToolUse': onPreToolUse(input, config, clientSessionId); return 0;
     case 'TaskCompleted': await onTaskCompleted(input, clientSessionId); return 0;
     case 'SessionEnd': await stopDaemon(clientSessionId).catch(() => undefined); return 0;

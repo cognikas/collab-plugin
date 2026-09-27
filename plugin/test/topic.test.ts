@@ -59,6 +59,26 @@ describe('which topic a session joins', () => {
   });
 });
 
+describe('the topic of a session that starts again', () => {
+  const git = gitFrom({
+    [`${REPO}|rev-parse --show-toplevel`]: REPO,
+    [`${REPO}|rev-parse --git-common-dir`]: '.git',
+  });
+
+  it('is an explicit topic over the one it had, so setting COLLAB_TOPIC takes on a --resume', () => {
+    // The session was born in the super folder's name, before COLLAB_TOPIC was set.
+    expect(resolveTopic({ topic: 'masterlive-global' }, REPO, git, 'masterlive')).toBe('masterlive-global');
+  });
+
+  it('is the one it had over the repo it now finds itself in', () => {
+    expect(resolveTopic({}, REPO, git, 'collab-global')).toBe('collab-global');
+  });
+
+  it('is the repo name when it had none', () => {
+    expect(resolveTopic({}, REPO, git, '')).toBe('masterlive');
+  });
+});
+
 describe('the topic setting', () => {
   const saved = { ...process.env };
   afterEach(() => { process.env = { ...saved }; });

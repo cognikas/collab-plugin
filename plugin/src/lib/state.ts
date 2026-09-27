@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { URGENCY_RANK, type Claim, type ContextSummary, type Member, type Message, type Urgency } from './model.js';
-import { sessionDir, sessionsRoot } from './config.js';
+import { dataDir, sessionDir, sessionsRoot } from './config.js';
 
 /**
  * Everything here is synchronous and file-based on purpose: hooks are
@@ -151,8 +151,61 @@ export function listDaemons(): DaemonInfo[] {
     .sort((a, b) => b.startedAt - a.startedAt);
 }
 
-export function clearDaemonInfo(clientSessionId: string): void {
-  try { fs.unlinkSync(file(clientSessionId, 'daemon.json')); } catch { /* already gone */ }
+/**
+ * Removes a session's registration. With `pid`, only while it is still that
+ * daemon's: one that lost the session to another daemon must not unregister
+ * the winner, which would then shut down too at its next watchdog check.
+ */
+export function clearDaemonInfo(clientSessionId: string, pid?: number): void {
+  const target = file(clientSessionId, 'daemon.json');
+  if (pid !== undefined && readJson<DaemonInfo | undefined>(target, undefined)?.pid !== pid) return;
+  try { fs.unlinkSync(target); } catch { /* already gone */ }
+}
+
+/* ── MCP servers ────────────────────────────────────────────────────────── */
+
+/**
+ * One running MCP server of this plugin. Claude Code runs it for as long as it
+ * keeps a session's tools, so a daemon whose Claude Code process has none left
+ * takes its session to be over, even while that process lives on (as a
+ * background spare, say).
+ */
+export interface McpServerInfo {
+  pid: number;
+  /** The Claude Code process it serves: MCP servers are its direct children. */
+  claudePid: number;
+  startedAt: number;
+}
+
+function mcpRoot(): string {
+  return path.join(dataDir(), 'mcp');
+}
+
+export function registerMcpServer(info: McpServerInfo): void {
+  writeJsonAtomic(path.join(mcpRoot(), `${info.pid}.json`), info);
+}
+
+export function unregisterMcpServer(pid: number): void {
+  try { fs.unlinkSync(path.join(mcpRoot(), `${pid}.json`)); } catch { /* already gone */ }
+}
+
+/** The MCP servers still running for one Claude Code process. Registrations of dead ones are removed on the way. */
+export function liveMcpServers(claudePid: number): McpServerInfo[] {
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(mcpRoot());
+  } catch {
+    return [];
+  }
+
+  const live: McpServerInfo[] = [];
+  for (const entry of entries.filter((name) => name.endsWith('.json'))) {
+    const info = readJson<McpServerInfo | undefined>(path.join(mcpRoot(), entry), undefined);
+    if (!info) continue;
+    if (!isAlive(info.pid)) unregisterMcpServer(info.pid);
+    else if (info.claudePid === claudePid) live.push(info);
+  }
+  return live;
 }
 
 export function isAlive(pid: number): boolean {

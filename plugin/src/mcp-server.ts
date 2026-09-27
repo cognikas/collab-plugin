@@ -14,18 +14,20 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { slug } from '@collab/protocol';
 import type { Claim, ContextEntry, ContextSummary, Member, Message, OutgoingMessage, SendResult } from './lib/model.js';
 import {
-  channelFlag, isIdle, pushOutcome, readCommandLine, PLUGIN_NAME, type ChannelFlag,
+  channelFlag, CONFIRM_WINDOW_MS, isIdle, pushOutcome, settlePush, PLUGIN_NAME, type ChannelFlag, type PushOutcome,
 } from './lib/channel.js';
 import { readConfig } from './lib/config.js';
 import { callDaemon, DaemonUnavailable, resolveSessionId } from './lib/daemon-client.js';
+import { readCommandLine } from './lib/process.js';
 import { ago, liveSessions, renderChannelEvent, renderMemberLines, renderMessage, renderSession } from './lib/render.js';
 import { resolveSessionTarget } from './lib/sessions.js';
 import { PLUGIN_VERSION } from './lib/version.js';
 import {
-  flattenForContext as flat, interruptionBatch, readChannelStatus, readCursor, readLocalState, readTurn, unreadMessages,
-  writeChannelStatus, writeCursor, type ChannelStatus,
+  flattenForContext as flat, interruptionBatch, readChannelStatus, readCursor, readLocalState, readTurn, registerMcpServer,
+  unreadMessages, unregisterMcpServer, writeChannelStatus, writeCursor, type ChannelStatus,
 } from './lib/state.js';
 
 // This server is a direct child of the Claude Code process, like the hooks: a
@@ -33,6 +35,11 @@ import {
 process.env.COLLAB_CLAUDE_PID = String(process.ppid);
 // ...and resolves its topic from the project, not from wherever this process runs.
 process.env.COLLAB_CWD ||= process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+// The session's daemon watches for this: a Claude Code process that no longer
+// runs this server has no session left for it, even if the process lives on.
+registerMcpServer({ pid: process.pid, claudePid: process.ppid, startedAt: Date.now() });
+process.on('exit', () => unregisterMcpServer(process.pid));
 
 /** Resolved per call: the daemon may not exist yet when this server starts, and
  *  a `/clear` moves the process on to a new session. */
@@ -135,10 +142,17 @@ const TOOLS: ToolDefinition[] = [
       const handle = state.handle || me?.handle || state.displayName;
       // Only a server that lists sessions can say there are none.
       const others = me?.sessions ? liveSessions(me).filter((s) => s.clientSessionId !== own) : undefined;
+      // The topic is fixed when the session's daemon starts; one configured since then waits for the next start.
+      const configuredTopic = slug(config.topic ?? '');
+      const topicNote = configuredTopic && state.topic && configuredTopic !== state.topic
+        ? [`Note: the configured topic is "${configuredTopic}", but this session joined "${flat(state.topic)}" when it started. `
+          + 'It moves there the next time the session starts (a --resume included).']
+        : [];
 
       const lines = [
         `Channel: ${state.channel} (${state.connected ? 'connected' : 'DISCONNECTED — working from cache'})`,
         `You: ${flat(handle)}, in topic ${flat(state.topic)}, session ${flat(own)}`,
+        ...topicNote,
         ...(others === undefined ? []
           : others.length > 0
             ? [`Your other sessions:\n${others.map((s) => `  - ${renderSession(s, own)}`).join('\n')}`]
@@ -446,8 +460,9 @@ const flag: ChannelFlag | undefined = config.deliveryMode === 'channel'
 
 const NOT_OPTED_IN = 'this session was not started with '
   + `--dangerously-load-development-channels plugin:${PLUGIN_NAME}@<marketplace>`;
-const DROPPED = 'Claude Code did not deliver a pushed message, so the channel is not registered '
-  + '(the plugin is not on the channel allowlist, or channels are disabled for the organization)';
+const DROPPED = `a message pushed into this idle session started no turn within ${CONFIRM_WINDOW_MS / 60_000} minutes, `
+  + 'so the channel does not look registered (the plugin is not on the channel allowlist, or channels are disabled '
+  + 'for the organization)';
 
 const CHANNEL_INSTRUCTIONS = [
   'Messages from the collaboration channel — other developers\' Claude Code sessions, addressed to this',
@@ -485,12 +500,16 @@ async function untilSessionStarted(clientSessionId: string): Promise<void> {
 
 /**
  * The idle half of `channel` mode; the hooks still deliver during a turn. So it
- * only pushes into an idle session — mid-turn the event would queue behind the
- * turn and the Stop at its end would deliver the same message again — and it
- * trusts a push only once the turn it should have started shows up.
+ * only pushes into an idle session, and it trusts the channel only once a push
+ * shows up as the turn it started. Until then a push that proves nothing goes
+ * back to the hooks. After that, Claude Code is known to take these events,
+ * and none goes back: one that landed in a turn that was merely slow is shown
+ * when that turn takes it, and giving it back would show it twice.
  */
 async function pushLoop(): Promise<void> {
   const dropped = new Set<string>();
+  // Per Claude Code process, which this server lives in: it outlasts a /clear.
+  let registered = false;
   let backoff = 1_000;
 
   for (;;) {
@@ -506,7 +525,9 @@ async function pushLoop(): Promise<void> {
         timeoutMs: 305_000,
       });
       if (!reply.message) continue;
-      while (!isIdle(readTurn(id))) await sleep(500);
+      // Until a push is confirmed, only a turn that ended counts as over: one
+      // that is waiting on a long tool call would make the first push look dropped.
+      while (!isIdle(readTurn(id), { trustStale: registered })) await sleep(500);
 
       const batch = interruptionBatch(id, config.stopMinUrgency);
       if (batch.length === 0) continue; // the Stop hook got there first
@@ -521,20 +542,23 @@ async function pushLoop(): Promise<void> {
         await server.notification({ method: 'notifications/claude/channel', params: renderChannelEvent(message, self, id) });
       }
 
-      let outcome = pushOutcome(readTurn(id), pushedAt);
+      // Once the channel is known to deliver, there is nothing left to prove.
+      let outcome: PushOutcome = registered ? 'confirmed' : pushOutcome(readTurn(id), pushedAt);
       while (outcome === 'pending') {
         await sleep(1_000);
         outcome = pushOutcome(readTurn(id), pushedAt);
       }
 
-      if (outcome === 'confirmed') {
+      const settled = settlePush(outcome, registered);
+      if (settled === 'delivered') {
+        registered = true;
         await callDaemon(id, '/ack', { method: 'POST', body: { cursor: highest } }).catch(() => undefined);
       } else {
         // Unproven, so give the messages back to the hooks. If the event did
         // land after all, the cost is seeing it twice; not doing this would
         // cost losing it.
         if (readCursor(id).delivered === highest) writeCursor(id, { delivered: before });
-        if (outcome === 'dropped') {
+        if (settled === 'fallback') {
           dropped.add(id);
           setStatus(id, 'fallback', DROPPED);
         }
@@ -579,10 +603,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 await server.connect(new StdioServerTransport());
 
+// Claude Code closing stdin is the end of this server. The push loop's timers
+// and long-poll would keep it running otherwise, and so still registered as
+// the session's.
+process.stdin.on('end', () => process.exit(0));
+
 if (config.deliveryMode === 'channel') {
-  // The push loop keeps timers and a long-poll alive, so the process no longer
-  // exits on its own when Claude Code closes stdin.
-  process.stdin.on('end', () => process.exit(0));
   if (flag) void pushLoop();
   else setStatus(session(), 'fallback', NOT_OPTED_IN);
 }

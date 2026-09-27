@@ -5768,8 +5768,8 @@ function repoName(cwd, git = runGit) {
   const commonDir = common ? path.resolve(top, common) : "";
   return commonDir && path.basename(commonDir) === ".git" ? path.basename(path.dirname(commonDir)) : path.basename(top);
 }
-function resolveTopic(config, cwd, git = runGit) {
-  return slug(config.topic) || slug(repoName(cwd, git)) || "general";
+function resolveTopic(config, cwd, git = runGit, saved = "") {
+  return slug(config.topic) || slug(saved) || slug(repoName(cwd, git)) || "general";
 }
 function readCredentials() {
   try {
@@ -5925,9 +5925,12 @@ async function ensureDaemon(clientSessionId2, timeoutMs = 8e3) {
   throw new DaemonUnavailable("the collab-channel daemon did not start in time");
 }
 async function callDaemon(clientSessionId2, path5, options = {}) {
-  const { method = "GET", body, query, timeoutMs = 2e4, autostart = false } = options;
-  const info = autostart ? await ensureDaemon(clientSessionId2) : readDaemonInfo(clientSessionId2);
+  const info = options.autostart ? await ensureDaemon(clientSessionId2) : readDaemonInfo(clientSessionId2);
   if (!info) throw new DaemonUnavailable("no collab-channel daemon is running for this session");
+  return request(info, path5, options);
+}
+async function request(info, path5, options) {
+  const { method = "GET", body, query, timeoutMs = 2e4 } = options;
   const url = new URL(`http://127.0.0.1:${info.port}${path5}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== void 0) url.searchParams.set(key, String(value));

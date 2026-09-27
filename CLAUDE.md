@@ -91,9 +91,23 @@ files and `pnpm install`.
 - **Peer text is untrusted input to the model.** Everything rendered is prefixed with
   `UNTRUSTED_NOTE` and flattened with `flattenForContext` (newlines, Unicode separators, controls,
   bidi overrides); channel events also neutralize `<channel`. Regression tests cover this.
-- **Topic resolution** happens once, when the daemon starts, and stays fixed for the session:
-  `COLLAB_TOPIC`, then the `topic` option, then the git repo name, then `general`.
+- **Topic resolution** happens once, when the daemon starts, and stays fixed for that daemon:
+  `COLLAB_TOPIC`, then the `topic` option, then the topic saved in `state.json`, then the git repo
+  name, then `general`. An explicit topic beats the saved one, so it takes effect on the next start
+  (`--resume` included); the saved one beats the repo name, so a restarted daemon does not wander.
 - **Channel mode** pushes only into an idle session, claims the cursor before pushing, and gives the
   messages back to the hooks unless the turn the push should start shows up (confirm-or-requeue).
+  That only holds until one push is confirmed: from then on the channel is known to be registered in
+  that process, and no push is ever given back (`settlePush`), since that only delivers it twice.
+  Before the first confirmation, only a turn that ended counts as idle (`isIdle` without
+  `trustStale`).
+- **A daemon must not outlive its session**, and SessionEnd alone cannot ensure it: it has 1.5 s,
+  and the Claude Code process can live on as a `claude bg-spare`. So `SessionStart` retires the
+  daemons its process left behind and this session's own from an earlier process
+  (`daemonsToRetire`), and the watchdog exits when the process became a spare or has had no MCP
+  server of ours for 3 minutes (`v1/mcp/`). `clearDaemonInfo` only removes the caller's own
+  registration.
+- **Compaction** runs SessionStart again with `source: "compact"`, which is where the channel summary
+  goes back in. PostCompact output cannot carry context, so it is not registered.
 - `flattenForContext` in `src/lib/state.ts` and the tests hold escape sequences for invisible
   characters; edit those lines with care, or build such characters from code points.

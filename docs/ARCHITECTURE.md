@@ -62,6 +62,10 @@ Uno por sesión de Claude Code. Lo arranca el hook `SessionStart`, en modo *deta
 | `channel.json` | solo en modo `channel`: si el push está activo y, si no, por qué |
 | `daemon.log` | diagnóstico |
 
+Aparte, cada servidor MCP del plugin deja `${CLAUDE_PLUGIN_DATA}/v1/mcp/<pid>.json` con su pid y el
+del proceso de Claude Code. Con eso el daemon sabe si su sesión sigue ahí (ver más abajo cuándo
+muere).
+
 La carpeta `v1/` existe porque 1.0 conserva el id de plugin de 0.6 (`collab-channel@cognikas`) y por
 tanto su `CLAUDE_PLUGIN_DATA`. Las credenciales de 0.6 son de otro backend y su inbox de otro
 protocolo: 1.0 no debe leer ninguno de los dos.
@@ -75,13 +79,51 @@ posterior que cumpla el filtro (`types`, `minUrgency`), y si no espera a la sigu
 mensaje que llega entre dos llamadas no se pierde. Devuelve **todo** lo posterior a `since`, no solo
 lo que casa con el filtro: el filtro decide cuándo despertar, no qué se ve.
 
-Muere cuando `SessionEnd` se lo pide, cuando otro daemon toma el relevo de la sesión, cuando muere el
-proceso de Claude Code al que sirve (un cierre abrupto se salta `SessionEnd`), o a las 12 h.
+**Cuándo muere.** Cuando `SessionEnd` se lo pide, cuando otro daemon toma el relevo de la sesión,
+cuando muere el proceso de Claude Code al que sirve (un cierre abrupto se salta `SessionEnd`), o a
+las 12 h.
 
-**El tema de la sesión** lo decide el daemon al arrancar: `COLLAB_TOPIC`, luego la opción `topic`,
-luego el nombre del repositorio principal (desde un worktree es el del repo, en un submódulo el del
-submódulo), y si no, `general`. Lo guarda en `state.json`, y un daemon que el servidor MCP vuelve a
-arrancar toma el de ahí: una sesión no cambia de tema a medias.
+`SessionEnd` no basta:
+
+- tiene 1,5 s, y Claude Code puede cortarlo antes de que termine;
+- el proceso de Claude Code puede seguir vivo después de la sesión, convertido en un spare de fondo
+  (`claude bg-spare --bg-spare …`).
+
+Un daemon que queda así sigue conectado como una sesión que nadie lee, y los demás le escriben. Por
+eso también muere en estos casos:
+
+- **Otra sesión arranca en su proceso.** El `SessionStart` de esa sesión lo retira, por ejemplo tras
+  un `/clear` o un `/resume` cuyo `SessionEnd` no llegó. Un proceso de Claude Code corre una sesión
+  a la vez.
+- **Su sesión se reanuda con `--resume` en otro proceso.** El `SessionStart` lo reemplaza: si no, se
+  emparejaría con el servidor MCP equivocado, vigilaría el pid equivocado y conservaría el tema y el
+  repo de antes.
+- **El proceso de Claude Code se convirtió en spare después de que el daemon arrancó.** Se ve en su
+  línea de comandos. No aplica en Windows, donde un proceso no cambia su línea de comandos.
+- **No queda ningún servidor MCP del plugin bajo ese proceso.** Tiene que llevar 3 minutos así, y
+  solo cuenta si alguna vez lo hubo. Claude Code lo mantiene mientras tiene las herramientas de la
+  sesión, y lo conserva tras un `/clear`.
+
+Al morir borra `daemon.json` solo si todavía es el suyo. Un daemon que perdió la sesión frente a otro
+no debe dar de baja al ganador, que si no se apaga también en su siguiente revisión.
+
+**El tema de la sesión** lo decide el daemon al arrancar, en este orden:
+
+1. `COLLAB_TOPIC`;
+2. la opción `topic`;
+3. el tema que la sesión ya tenía, guardado en `state.json`;
+4. el nombre del repositorio principal (desde un worktree es el del repo, en un submódulo el del
+   submódulo);
+5. `general`.
+
+Un daemon que arranca de nuevo para la misma sesión (el tope de 12 h, una caída, un `--resume`)
+conserva el tema guardado antes que el del repo: una sesión no cambia de tema porque su directorio
+apunte a otro repo. Un tema explícito sí gana sobre el guardado, así que ponerlo surte efecto la
+próxima vez que la sesión arranca, `--resume` incluido. Mientras tanto, `collab_status` avisa si el
+tema configurado y el de la sesión no coinciden.
+
+El repo y la rama que el daemon declara al suscribirse se los pasa el hook. Un daemon que arrancó
+el servidor MCP los saca del directorio de la sesión.
 
 ### Cómo habla el daemon con el servidor
 
@@ -174,8 +216,15 @@ procesa aunque esté inactiva.
 **Reparto del trabajo.** Durante un turno entregan los hooks, exactamente igual que en `stop`. El
 servidor MCP solo empuja con la sesión **inactiva**: un evento que llega a mitad de turno se encola
 hasta el siguiente, y para entonces el `Stop` ya habría entregado el mismo mensaje. Para saber si hay
-turno, en este modo los hooks escriben `turn.json`. Un turno del que ningún hook sabe nada en 10
-minutos se da por terminado, porque si el usuario interrumpe con Esc no hay `Stop`.
+turno, en este modo los hooks escriben `turn.json`.
+
+Un turno del que ningún hook sabe nada en 10 minutos se da por terminado, porque si el usuario
+interrumpe con Esc no hay `Stop`. Eso vale solo cuando el canal ya demostró que entrega en ese
+proceso. Antes, un turno que solo espera una herramienta larga, o la respuesta del usuario a una
+pregunta, recibiría el primer push y lo haría parecer perdido.
+
+Una compactación dispara `SessionStart` con `source: "compact"`, a veces a mitad de turno. No cuenta
+como turno terminado.
 
 **El bucle.** `GET /wait` en el daemon; cuando despierta, espera a que la sesión esté inactiva,
 recalcula el lote, reclama el cursor **antes** de empujar para que un hook que salte a la vez no lo
@@ -184,10 +233,22 @@ entregue también, y emite una notificación por mensaje, con `UNTRUSTED_NOTE`, 
 
 **Saber si la sesión lo aceptó.** Claude Code no le dice a un servidor si lo registró como channel, y
 si no lo hizo descarta los eventos sin error. Dos defensas: al arrancar, el servidor lee la línea de
-comandos de su proceso padre y busca el flag con `plugin:collab-channel@…`; y cada push se confirma
-por la actividad de hooks que deja el turno que arranca. Si en 180 s no hay nada, el cursor vuelve
-atrás, el siguiente `Stop` entrega el mensaje y esa sesión deja de empujar. Ante la duda (el usuario
-escribió en ese intervalo) el mensaje vuelve a la cola: puede verse dos veces, pero no perderse.
+comandos de su proceso padre y busca el flag con `plugin:collab-channel@…`; y el primer push se
+confirma por la actividad de hooks que deja el turno que arranca. `UserPromptSubmit` no se dispara
+para ese turno, así que la señal es su primera herramienta o su `Stop`.
+
+Según lo que pase después del primer push:
+
+- **Nada en 10 minutos:** el cursor vuelve atrás, el siguiente `Stop` entrega el mensaje y esa
+  sesión deja de empujar.
+- **Hay duda** (el usuario escribió en ese intervalo): el mensaje vuelve a la cola. Puede verse dos
+  veces, pero no perderse.
+- **Se confirma:** el canal está registrado en ese proceso. Claude Code no pierde un evento que
+  recibió: uno que cae en un turno en curso espera a que el turno lo tome. Desde entonces ningún
+  push vuelve a la cola.
+
+Sin esa regla, un push que cae en un turno largo se daría por perdido. El mensaje se entregaría dos
+veces, y el canal se apagaría para el resto de la sesión con un falso «not registered».
 
 ### Por qué `dist/` está commiteado
 

@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -133,6 +134,49 @@ describe('inbox and cursor', () => {
     const remaining = unreadMessages('s1');
     expect(remaining).toHaveLength(10);
     expect(remaining.at(-1)?.seq).toBe(60);
+  });
+});
+
+describe('daemon registration', () => {
+  const registration = (pid: number) => ({ pid, port: 1, token: 't', startedAt: 0, clientSessionId: 's1', cwd: '/repo' });
+  const daemonJson = () => path.join(tempDir, 'v1', 'sessions', 's1', 'daemon.json');
+
+  it('is only removed by the daemon it names, so one that lost the session cannot unregister the winner', async () => {
+    const { clearDaemonInfo, writeDaemonInfo } = await stateModule();
+    writeDaemonInfo(registration(111));
+
+    clearDaemonInfo('s1', 222);
+    expect(fs.existsSync(daemonJson())).toBe(true);
+    clearDaemonInfo('s1', 111);
+    expect(fs.existsSync(daemonJson())).toBe(false);
+  });
+
+  it('is removed unconditionally without a pid', async () => {
+    const { clearDaemonInfo, writeDaemonInfo } = await stateModule();
+    writeDaemonInfo(registration(111));
+    clearDaemonInfo('s1');
+    expect(fs.existsSync(daemonJson())).toBe(false);
+  });
+});
+
+describe('MCP servers of a Claude Code process', () => {
+  it('lists the live ones of that process only, and forgets the dead', async () => {
+    const { liveMcpServers, registerMcpServer } = await stateModule();
+    const dead = spawnSync(process.execPath, ['-e', '']).pid!;
+    registerMcpServer({ pid: process.pid, claudePid: 100, startedAt: 1 });
+    registerMcpServer({ pid: dead, claudePid: 100, startedAt: 2 });
+
+    expect(liveMcpServers(100).map((s) => s.pid)).toEqual([process.pid]);
+    expect(liveMcpServers(200)).toEqual([]);
+    expect(fs.existsSync(path.join(tempDir, 'v1', 'mcp', `${dead}.json`))).toBe(false);
+  });
+
+  it('are gone once they unregister, and there are none before any registered', async () => {
+    const { liveMcpServers, registerMcpServer, unregisterMcpServer } = await stateModule();
+    expect(liveMcpServers(100)).toEqual([]);
+    registerMcpServer({ pid: process.pid, claudePid: 100, startedAt: 1 });
+    unregisterMcpServer(process.pid);
+    expect(liveMcpServers(100)).toEqual([]);
   });
 });
 
