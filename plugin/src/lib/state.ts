@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  URGENCY_RANK, type Claim, type ContextSummary, type Member, type Message, type TaskList, type Urgency,
+  URGENCY_RANK, type Claim, type ContextSummary, type Member, type Message, type Task, type TaskList, type Urgency,
 } from './model.js';
 import { dataDir, sessionDir, sessionsRoot } from './config.js';
 
@@ -76,6 +76,14 @@ export interface LocalState {
   contextIndex: ContextSummary[];
   /** The topic's task lists with open tasks, most recently changed first. */
   taskLists: TaskList[];
+  /**
+   * The topic's open and in-progress tasks, as the last read of them left them,
+   * so the hooks and the statusline can say who is doing what without the
+   * network. Absent until the first read.
+   */
+  tasks?: Task[];
+  /** Set by a hello and cleared by the read of the topic's tasks that follows it: until then `tasks` may be behind. */
+  tasksStale?: boolean;
   latestSeq: number;
   updatedAt: number;
   lastError?: string;
@@ -328,6 +336,35 @@ export function applyTaskList(clientSessionId: string, list: TaskList): void {
   const others = state.taskLists.filter((l) => l.key !== list.key);
   const kept = list.open + list.inProgress > 0 ? [list, ...others] : others;
   writeLocalState(clientSessionId, { taskLists: kept.sort((a, b) => b.updatedAt - a.updatedAt) });
+}
+
+const isOpen = (task: Task) => task.status === 'open' || task.status === 'in_progress';
+
+/**
+ * Keeps the topic's open tasks current from a read of them: every list's, or
+ * only `list`'s. Closed tasks drop out, as they do from the lists' counts, and a
+ * task of another topic changes nothing here.
+ */
+export function applyTasks(clientSessionId: string, tasks: Task[], list?: string): void {
+  const state = readLocalState(clientSessionId);
+  const read = tasks.filter((t) => (!state.topic || t.topic === state.topic) && isOpen(t));
+  const kept = list === undefined ? [] : (state.tasks ?? []).filter((t) => t.list !== list);
+  writeLocalState(clientSessionId, { tasks: [...kept, ...read], tasksStale: false });
+}
+
+/**
+ * The same for one task, as this session's own change left it: a session gets
+ * no notice of its own change. An answer older than what is cached changes nothing.
+ */
+export function applyTask(clientSessionId: string, task: Task): void {
+  const state = readLocalState(clientSessionId);
+  if (state.topic && task.topic !== state.topic) return;
+  const tasks = state.tasks ?? [];
+  const same = (t: Task) => t.list === task.list && t.number === task.number;
+  const known = tasks.find(same);
+  if (known && known.updatedAt > task.updatedAt) return;
+  const others = tasks.filter((t) => !same(t));
+  writeLocalState(clientSessionId, { tasks: isOpen(task) ? [...others, task] : others });
 }
 
 /* ── Derived views ──────────────────────────────────────────────────────── */

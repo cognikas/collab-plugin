@@ -174,6 +174,28 @@ describe('a session start', () => {
     expect(readCursor('s1').delivered).toBe(10);
   }, 30_000);
 
+  it('says who is doing what in the topic, from the tasks the daemon read', async () => {
+    await startFake('s1', process.pid);
+    const list = { key: 'rc5', topic: 't1', title: 'rc.5', createdByName: 'ana', createdAt: 0, updatedAt: 0,
+      open: 0, inProgress: 1, done: 0, dismissed: 0 };
+    writeLocalState('s1', {
+      channel: 'team', topic: 't1', connected: true, self: 'ME', taskLists: [list], tasksStale: false,
+      tasks: [{ list: 'rc5', topic: 't1', number: 2, title: 'Fix the startup summary', status: 'in_progress',
+        createdByMemberId: 'PEER', createdByName: 'ana', createdAt: 0, progressCount: 1, updatedAt: 0,
+        holder: { memberId: 'PEER', handle: 'ana', name: 'Ana', clientSessionId: 's-a1', since: Date.now() },
+        lastProgress: { text: 'half way', percent: 50, authorName: 'Ana', at: Date.now() } }],
+    });
+
+    const result = spawnSync(process.execPath, [hook, 'SessionStart'], {
+      input: JSON.stringify({ session_id: 's1', hook_event_name: 'SessionStart', source: 'startup', cwd: tempDir }),
+      env: { ...env, CLAUDE_PLUGIN_ROOT: root }, encoding: 'utf8', timeout: 20_000,
+    });
+    expect(result.status).toBe(0);
+    const context = (JSON.parse(result.stdout) as { hookSpecificOutput: { additionalContext: string } })
+      .hookSpecificOutput.additionalContext;
+    expect(context).toContain('In progress in this topic:\n  - ana (session s-a1): rc5#2 Fix the startup summary — 50%, 0s ago');
+  }, 30_000);
+
   it('ends with SessionEnd asking the session\'s daemon to stop', async () => {
     const daemon = await startFake('s1', process.pid);
     const result = spawnSync(process.execPath, [hook, 'SessionEnd'], {

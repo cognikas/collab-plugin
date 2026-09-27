@@ -30,7 +30,7 @@ import { URGENCY_RANK, type Message, type OutgoingMessage, type Task, type TaskL
 import { notifyDesktop } from './lib/notify.js';
 import { becameSpare, readCommandLine } from './lib/process.js';
 import {
-  appendInbox, applyTaskList, clearDaemonInfo, isAlive, liveMcpServers, messagesSince, readCursor, readInbox, readLocalState,
+  appendInbox, applyTask, applyTaskList, applyTasks, clearDaemonInfo, isAlive, liveMcpServers, messagesSince, readCursor, readInbox, readLocalState,
   truncateInbox, writeCursor, writeDaemonInfo, writeLocalState,
 } from './lib/state.js';
 import { toClaim, toContextEntry, toSendRequest, toSendResult, toSnapshot, toTask, toTaskList } from './lib/wire.js';
@@ -42,6 +42,8 @@ const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 30_000;
 /** How long the session's MCP server may be gone before the session counts as over. A reconnect takes seconds. */
 const MCP_GONE_MS = 3 * 60 * 1000;
+/** How long task notices are gathered before the topic's tasks are read again. */
+const TASK_REFRESH_DEBOUNCE_MS = 300;
 
 const clientSessionId = process.env.COLLAB_CLIENT_SESSION_ID ?? 'default';
 /** The Claude Code process this daemon serves, from the hook or MCP server that started it. */
@@ -195,6 +197,7 @@ class Daemon {
     if (helloApplied) {
       this.freshHello = false;
       this.subscribed = true;
+      void this.refreshTasks();
     }
   }
 
@@ -205,6 +208,8 @@ class Daemon {
   private ingest(message: Message, { quiet = false } = {}): void {
     appendInbox(clientSessionId, message);
     for (const waiter of this.waiters) waiter();
+    // A replayed notice is covered by the read that follows the hello.
+    if (message.task && !quiet) this.scheduleTaskRefresh();
 
     // Low-urgency bookkeeping (claims, context notices) should not buzz anyone.
     const worthAToast = !quiet && this.config.desktopNotifications
@@ -473,6 +478,38 @@ class Daemon {
 
   /* ── Task lists ───────────────────────────────────────────────────────── */
 
+  private taskRefresh?: NodeJS.Timeout;
+
+  /** A burst of task notices, such as a list of five added at once, needs one read, not five. */
+  private scheduleTaskRefresh(): void {
+    if (this.taskRefresh) return;
+    this.taskRefresh = setTimeout(() => {
+      this.taskRefresh = undefined;
+      void this.refreshTasks();
+    }, TASK_REFRESH_DEBOUNCE_MS);
+    this.taskRefresh.unref();
+  }
+
+  /**
+   * Reads the topic's open tasks into state.json, for what cannot go to the
+   * network itself: the session start and the statusline. A task notice says
+   * which task changed, not who has it now or how far along it is, hence a read.
+   */
+  private async refreshTasks(): Promise<void> {
+    try {
+      const response = await this.overHttp(() => listTasksViaHttp(this.creds, this.origin, {
+        topic: '', list: '', filter: TaskFilter.OPEN, limit: 0,
+      }));
+      writeLocalState(clientSessionId, { taskLists: response.lists.map(toTaskList).filter((l) => l.open + l.inProgress > 0) });
+      if (!response.truncated) applyTasks(clientSessionId, response.tasks.map(toTask));
+      else writeLocalState(clientSessionId, { tasksStale: false });
+    } catch (err) {
+      // A backend without task lists, or a failed read: nothing better will come, so nothing to wait for.
+      writeLocalState(clientSessionId, { tasksStale: false });
+      log('task read failed', (err as Error).message);
+    }
+  }
+
   /** A backend from before task lists answers them as an operation it does not know. */
   private async tasks<T>(run: () => Promise<T>): Promise<T> {
     try {
@@ -495,11 +532,13 @@ class Daemon {
       topic, list, filter, limit: Math.max(0, Math.trunc(Number(params.get('limit') ?? 0)) || 0),
     }));
     const lists = response.lists.map(toTaskList);
+    const tasks = response.tasks.map(toTask);
     // A fresh read of this topic's open lists is the best summary there is.
-    if (filter === TaskFilter.OPEN && !list && (!topic || topic === this.origin.topic)) {
-      writeLocalState(clientSessionId, { taskLists: lists.filter((l) => l.open + l.inProgress > 0) });
+    if (filter === TaskFilter.OPEN && (!topic || topic === this.origin.topic)) {
+      if (!list) writeLocalState(clientSessionId, { taskLists: lists.filter((l) => l.open + l.inProgress > 0) });
+      if (!response.truncated) applyTasks(clientSessionId, tasks, list || undefined);
     }
-    return { lists, tasks: response.tasks.map(toTask), truncated: response.truncated };
+    return { lists, tasks, truncated: response.truncated };
   }
 
   /** Creates the list if the topic has none by that key, then adds to it. */
@@ -517,7 +556,9 @@ class Daemon {
 
     const list = toTaskList(added.value.list);
     applyTaskList(clientSessionId, list);
-    return { created: created.value.created, list, tasks: added.value.tasks.map(toTask) };
+    const addedTasks = added.value.tasks.map(toTask);
+    for (const task of addedTasks) applyTask(clientSessionId, task);
+    return { created: created.value.created, list, tasks: addedTasks };
   }
 
   private async updateTask(body: Record<string, unknown>): Promise<{ task: Task; list: TaskList }> {
@@ -540,9 +581,11 @@ class Daemon {
     if (response.case !== 'updateTask' || !response.value.task || !response.value.list) throw new Error('unexpected answer to a task update');
 
     const list = toTaskList(response.value.list);
+    const task = toTask(response.value.task);
     // This session gets no notice of its own change, so its summary moves here.
     applyTaskList(clientSessionId, list);
-    return { task: toTask(response.value.task), list };
+    applyTask(clientSessionId, task);
+    return { task, list };
   }
 
   /** Prefers the socket, falls back to plain HTTP so a send never just fails. */

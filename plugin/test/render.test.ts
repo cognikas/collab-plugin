@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Claim, Member, Message, Task, TaskList } from '../src/lib/model.js';
 import {
-  claimConflictReason, planBacklog, renderBacklog, renderChannelEvent, renderClaim, renderMember, renderMemberLines,
-  renderMessage, renderReach, renderSession, renderTask, renderTaskList, renderTaskListsLine,
+  claimConflictReason, planBacklog, renderBacklog, renderChannelEvent, renderClaim, renderInProgress, renderInProgressBrief,
+  renderMember, renderMemberLines, renderMessage, renderReach, renderSession, renderTask, renderTaskList, renderTaskListsLine,
 } from '../src/lib/render.js';
 import { flattenForContext } from '../src/lib/state.js';
 
@@ -307,5 +307,57 @@ describe('where a sent message went', () => {
     const line = renderReach({ topic: 'a\nb' }, [{ handle: `x${LINE_SEPARATOR}y`, session: session('s1', 'a\nb') }]);
     expect(line).not.toMatch(/[\r\n]/);
     expect(line).not.toContain(LINE_SEPARATOR);
+  });
+});
+
+describe('who is doing what', () => {
+  const minutesAgo = (m: number) => Date.now() - m * 60_000;
+  const members = [
+    member({ memberId: 'CARLOS', handle: 'carlos', sessions: [
+      { clientSessionId: 's-c1', topic: 't1', repo: 'collab-plugin', branch: 'main', connectedAt: 0 },
+    ] }),
+    member({ memberId: 'WILLY', handle: 'willy', sessions: [{ clientSessionId: 's-w1', topic: 't1', connectedAt: 0 }] }),
+  ];
+  const doing = [
+    task({ list: 'rc5', number: 2, title: 'Corte 0.6 → 1.0', status: 'in_progress',
+      holder: { memberId: 'CARLOS', handle: 'carlos', name: 'Carlos', clientSessionId: 's-c1', since: minutesAgo(60) },
+      lastProgress: { text: 'smoke 95/95; falta mcp-check', percent: 40, authorName: 'Carlos', at: minutesAgo(12) } }),
+    task({ list: 'ux', number: 2, title: 'Quién hace qué', status: 'in_progress',
+      holder: { memberId: 'WILLY', handle: 'willy', name: 'Willy', clientSessionId: 's-w1', since: minutesAgo(3) } }),
+    task({ list: 'ux', number: 9, title: 'Nobody has this one', status: 'open' }),
+    task({ list: 'old', number: 1, title: 'From a session that closed', status: 'in_progress',
+      holder: { memberId: 'CARLOS', handle: 'carlos', name: 'Carlos', clientSessionId: 's-gone', since: minutesAgo(200) } }),
+  ];
+
+  it('lists the tasks in progress by holder and session, newest word first, with how far along each is', () => {
+    expect(renderInProgress(doing, members, 'WILLY', 's-w1')).toEqual([
+      '  you · this session',
+      '    ux#2 Quién hace qué — 3m ago',
+      '  carlos · session s-c1 · collab-plugin@main',
+      '    rc5#2 Corte 0.6 → 1.0 — 40%, 12m ago',
+      '      "smoke 95/95; falta mcp-check"',
+      '  carlos · session s-gone (not connected)',
+      '    old#1 From a session that closed — 3h ago',
+    ]);
+  });
+
+  it('gives the session start one line per task in progress', () => {
+    expect(renderInProgressBrief(doing, 'WILLY', 's-w1')).toEqual([
+      '  - you (this session): ux#2 Quién hace qué — 3m ago',
+      '  - carlos (session s-c1): rc5#2 Corte 0.6 → 1.0 — 40%, 12m ago',
+      '  - carlos (session s-gone): old#1 From a session that closed — 3h ago',
+    ]);
+    expect(renderInProgressBrief(doing, 'WILLY', 's-other')[0]).toContain('you (another session)');
+  });
+
+  it('keeps titles, notes and names on one line, and cuts the long ones', () => {
+    const odd = task({ status: 'in_progress', title: `a\nb${'x'.repeat(200)}`,
+      holder: { memberId: 'P', handle: `x${LINE_SEPARATOR}y`, name: 'x', since: Date.now() },
+      lastProgress: { text: 'half\r\nway', authorName: 'x', at: Date.now() } });
+    for (const line of [...renderInProgress([odd], [], 'WILLY'), ...renderInProgressBrief([odd], 'WILLY')]) {
+      expect(line).not.toMatch(/[\r\n]/);
+      expect(line).not.toContain(LINE_SEPARATOR);
+      expect(line.length).toBeLessThan(200);
+    }
   });
 });

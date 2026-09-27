@@ -25,8 +25,8 @@ import { readConfig } from './lib/config.js';
 import { callDaemon, DaemonUnavailable, resolveSessionId } from './lib/daemon-client.js';
 import { readCommandLine } from './lib/process.js';
 import {
-  ago, liveSessions, renderChannelEvent, renderMemberLines, renderMessage, renderReach, renderSession, renderTask,
-  renderTaskList, renderTaskListsLine, UNTRUSTED_NOTE,
+  ago, liveSessions, renderChannelEvent, renderInProgress, renderMemberLines, renderMessage, renderReach, renderSession,
+  renderTask, renderTaskList, renderTaskListsLine, UNTRUSTED_NOTE,
 } from './lib/render.js';
 import { reachedSessions, resolveRecipient, type Recipient } from './lib/sessions.js';
 import { PLUGIN_VERSION } from './lib/version.js';
@@ -175,6 +175,14 @@ const TOOLS: ToolDefinition[] = [
       const others = me?.sessions ? liveSessions(me).filter((s) => s.clientSessionId !== own) : undefined;
       // The topic is fixed when the session's daemon starts; one configured since then waits for the next start.
       const configuredTopic = slug(config.topic ?? '');
+      // Who is doing what: read fresh when a list has something in progress, the cached read if that fails.
+      const doing = state.taskLists?.some((list) => list.inProgress > 0)
+        ? renderInProgress(
+          (await callDaemon<{ tasks: Task[] }>(session(), '/tasks', { query: { show: 'open' }, autostart: true })
+            .catch(() => undefined))?.tasks ?? readLocalState(session()).tasks ?? [],
+          state.members, state.self, own,
+        )
+        : [];
       const topicNote = configuredTopic && state.topic && configuredTopic !== state.topic
         ? [`Note: the configured topic is "${configuredTopic}", but this session joined "${flat(state.topic)}" when it started. `
           + 'It moves there the next time the session starts (a --resume included).']
@@ -192,6 +200,7 @@ const TOOLS: ToolDefinition[] = [
           ? `Members (address them by handle; add session to reach just one of theirs):\n${peers
             .flatMap((m) => renderMemberLines(m, state.self, own)).join('\n')}`
           : 'Members: nobody else has joined yet',
+        ...(doing.length > 0 ? [`In progress in topic ${flat(state.topic)}:\n${doing.join('\n')}`] : []),
         state.claims.length > 0
           ? `Claims in this topic:\n${state.claims.map((c) => `  - ${flat(c.ownerName)}: ${c.paths.map(flat).join(', ')}${c.note ? ` (${flat(c.note)})` : ''} [id ${c.claimId}]`).join('\n')}`
           : 'Claims in this topic: none',

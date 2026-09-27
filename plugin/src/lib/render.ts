@@ -314,6 +314,70 @@ export function renderTask(task: Task, self = ''): string {
   return `${flattenForContext(task.list)}#${task.number} [${state}] ${flattenForContext(task.title)}${detail}${refs}`;
 }
 
+/** Flattened, then cut to `max` characters. */
+function clip(text: string, max: number): string {
+  const flat = flattenForContext(text);
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+}
+
+const inProgress = (tasks: Task[]) => tasks
+  .filter((task) => task.status === 'in_progress' && task.holder)
+  .sort((a, b) => (b.lastProgress?.at ?? b.holder!.since) - (a.lastProgress?.at ?? a.holder!.since));
+
+/** `rc5#2 Fix the startup summary — 40%, 12m ago`: how far along, and since when nothing was said. */
+function progressLine(task: Task, titleMax: number): string {
+  const percent = task.lastProgress?.percent;
+  const when = ago(task.lastProgress?.at ?? task.holder?.since ?? task.updatedAt);
+  return `${flattenForContext(task.list)}#${task.number} ${clip(task.title, titleMax)} — `
+    + `${percent === undefined ? '' : `${percent}%, `}${when}`;
+}
+
+/**
+ * Who is doing what in the topic, for collab_status: its tasks in progress by
+ * holder and session, each with how far along it is and the last word on it.
+ * Titles, notes, names and branches were chosen by others, so all flattened.
+ */
+export function renderInProgress(tasks: Task[], members: Member[], self: string, ownSession = ''): string[] {
+  const groups = new Map<string, { holder: NonNullable<Task['holder']>; tasks: Task[] }>();
+  for (const task of inProgress(tasks)) {
+    const key = `${task.holder!.memberId}/${task.holder!.clientSessionId ?? ''}`;
+    groups.set(key, { holder: task.holder!, tasks: [...(groups.get(key)?.tasks ?? []), task] });
+  }
+
+  const lines: string[] = [];
+  for (const { holder, tasks: held } of groups.values()) {
+    const who = holder.memberId === self ? 'you' : flattenForContext(holder.handle || holder.name);
+    const id = sessionId(holder.clientSessionId);
+    let where = '';
+    if (id && holder.memberId === self && id === ownSession) where = ' · this session';
+    else if (id) {
+      const live = members.find((m) => m.memberId === holder.memberId && m.status !== 'offline')
+        ?.sessions?.find((s) => s.clientSessionId === id);
+      const at = live ? location(live.repo, live.branch) : '';
+      where = live ? ` · session ${id}${at ? ` · ${at}` : ''}` : ` · session ${id} (not connected)`;
+    }
+    lines.push(`  ${who}${where}`);
+    for (const task of held) {
+      lines.push(`    ${progressLine(task, 90)}`);
+      if (task.lastProgress?.text) lines.push(`      "${clip(task.lastProgress.text, 160)}"`);
+    }
+  }
+  return lines;
+}
+
+/** The same at session start, one line per task: `- carlos (session <id>): rc5#2 … — 40%, 12m ago`. */
+export function renderInProgressBrief(tasks: Task[], self: string, ownSession = '', max = 8): string[] {
+  return inProgress(tasks).slice(0, max).map((task) => {
+    const holder = task.holder!;
+    const id = sessionId(holder.clientSessionId);
+    const mine = holder.memberId === self;
+    const who = mine
+      ? (id && id === ownSession ? 'you (this session)' : 'you (another session)')
+      : `${flattenForContext(holder.handle || holder.name)}${id ? ` (session ${id})` : ''}`;
+    return `  - ${who}: ${progressLine(task, 60)}`;
+  });
+}
+
 /** Keeps only letters for a tag attribute value; the server validates these, but they end up in markup. */
 function attribute(value: string): string {
   return value.replace(/[^a-z]/gi, '');

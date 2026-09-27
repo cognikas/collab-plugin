@@ -117,7 +117,11 @@ files and `pnpm install`.
 - **Task lists** are read with `ListTasks` over HTTP only, and written like any request. `state.json`
   keeps only the topic's lists with open tasks, from hello, from TASK notices (their payload carries
   the list's counts) and from this session's own results, since a session gets no notice of its own
-  change (`applyTaskList`, which never rolls a list back).
+  change (`applyTaskList`, which never rolls a list back). It also keeps the topic's open tasks
+  (`tasks`), for who-is-doing-what without the network: a TASK notice does not say who has a task
+  now, so the daemon reads them again after every hello and every notice (debounced), and takes its
+  own changes from their answers (`applyTask`). Until that read `tasksStale` is set, and the session
+  start shows no tasks rather than old ones.
 - **Compaction** runs SessionStart again with `source: "compact"`, which is where the channel summary
   goes back in. PostCompact output cannot carry context, so it is not registered.
 - `flattenForContext` in `src/lib/state.ts` and the tests hold escape sequences for invisible

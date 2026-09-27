@@ -9,12 +9,12 @@ import { isChannelPrompt } from './lib/channel.js';
 import { gitBranch, readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
 import { callDaemon, daemonsToRetire, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
 import {
-  claimConflictReason, liveSessions, planBacklog, renderBacklog, renderClaim, renderMemberLines, renderMessage,
-  renderSession, renderTaskListsLine, UNTRUSTED_NOTE,
+  claimConflictReason, liveSessions, planBacklog, renderBacklog, renderClaim, renderInProgressBrief, renderMemberLines,
+  renderMessage, renderSession, renderTaskListsLine, UNTRUSTED_NOTE,
 } from './lib/render.js';
 import {
   flattenForContext, interruptionBatch, listDaemons, pathMatchesClaim, readChannelStatus, readCursor, readLocalState,
-  recentMessages, unreadMessages, writeChannelStatus, writeCursor, writeTurn,
+  recentMessages, unreadMessages, writeChannelStatus, writeCursor, writeTurn, type LocalState,
 } from './lib/state.js';
 
 /** Two Stop hooks can fire back to back; never interrupt twice in a row. */
@@ -104,6 +104,9 @@ function renderChannelSummary(
   if (taskLists.length > 0) {
     lines.push(`Task lists in this topic with open tasks: ${renderTaskListsLine(taskLists.slice(0, 8))}. `
       + 'collab_tasks shows them; check out a task with collab_task_update before starting on it.');
+    // Tasks read before this session's hello could say someone still has what they finished since.
+    const doing = state.tasksStale ? [] : renderInProgressBrief(state.tasks ?? [], state.self, clientSessionId);
+    if (doing.length > 0) lines.push('In progress in this topic:', ...doing);
   }
 
   const messages = mode === 'unread' ? unreadMessages(clientSessionId) : recentMessages(clientSessionId, 10);
@@ -123,6 +126,15 @@ function renderChannelSummary(
   // Only what was shown, in full or by number, counts as delivered: the rest
   // stays unread for the Stop hook or collab_inbox.
   return { text: lines.join('\n'), highestSeq: backlog.throughSeq };
+}
+
+/**
+ * Connected and, when someone has a task in progress, with the topic's tasks
+ * read since the hello, so the summary says who is doing what as of now.
+ */
+function readyToSummarize(state: LocalState): boolean {
+  if (!state.connected) return false;
+  return !(state.tasksStale && state.taskLists.some((list) => list.inProgress > 0));
 }
 
 /**
@@ -186,7 +198,7 @@ async function onSessionStart(
     // Wait for the socket rather than guessing a delay: a cold Lambda takes a
     // couple of seconds, a warm one is immediate.
     const deadline = Date.now() + 4_000;
-    while (Date.now() < deadline && !readLocalState(clientSessionId).connected) {
+    while (Date.now() < deadline && !readyToSummarize(readLocalState(clientSessionId))) {
       await new Promise((r) => setTimeout(r, 150));
     }
   } catch (err) {

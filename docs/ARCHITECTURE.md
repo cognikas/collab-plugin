@@ -170,6 +170,17 @@ Las herramientas `collab_tasks`, `collab_task_add` y `collab_task_update` hablan
   respuesta a los cambios de esta misma sesión, que no recibe su propio aviso. Un aviso que llega
   tarde no hace retroceder una lista (`applyTaskList`). Ese resumen es lo que muestran el
   `SessionStart` y `collab_status`; las tareas en sí se piden con `collab_tasks`.
+- **Quién hace qué.** `state.json` guarda también las tareas abiertas del tema (`tasks`), para que el
+  `SessionStart` y la statusline digan quién tiene qué sin ir a la red.
+  - Un aviso `TASK` dice qué tarea cambió, pero no quién la tiene ahora ni cuánto avanzó. Por eso el
+    daemon vuelve a leer las tareas abiertas con `ListTasks` después de cada `hello` y de cada aviso,
+    juntando los avisos de 300 ms en una sola lectura.
+  - Los cambios de esta sesión salen de la respuesta a su propia petición (`applyTask`).
+  - El `hello` marca las tareas como atrasadas (`tasksStale`) hasta esa lectura. Si alguna lista
+    tiene tareas en curso, el `SessionStart` la espera dentro de sus 4 s, y si no llega no muestra
+    tareas que podrían estar viejas.
+  - `collab_status` las pide frescas cuando hay algo en curso y muestra la sección «In progress»:
+    persona, sesión, tarea, avance, última nota y hace cuánto.
 - **Avisos.** Son mensajes corrientes del inbox, de tipo `task`. Los cierres llegan en `normal`, así
   que interrumpen en el siguiente `Stop`; el resto llega en `low` y se muestra junto con la próxima
   entrega. Llegan también a las otras sesiones de quien actuó en el tema.
