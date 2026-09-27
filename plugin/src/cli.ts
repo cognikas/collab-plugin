@@ -12,7 +12,7 @@ import {
   credentialsPath, dataDir, readConfig, resolveCredentials, resolveTopic, sessionDir, writeCredentials, type Credentials,
 } from './lib/config.js';
 import { callDaemon, ensureDaemon } from './lib/daemon-client.js';
-import { liveSessions, renderMemberLines, renderSession } from './lib/render.js';
+import { liveSessions, renderMemberLines, renderSession, renderTaskListsLine } from './lib/render.js';
 import { readDaemonInfo, readLocalState, unreadMessages } from './lib/state.js';
 
 const clientSessionId = process.env.COLLAB_CLIENT_SESSION_ID ?? 'default';
@@ -88,6 +88,10 @@ async function cmdStatus(): Promise<number> {
     : 'Claims in this topic: none');
 
   console.log(`Shared context in this topic: ${fresh.contextIndex.length} entries`);
+  const taskLists = fresh.taskLists ?? [];
+  console.log(taskLists.length > 0
+    ? `Task lists with open tasks: ${renderTaskListsLine(taskLists)}`
+    : 'Task lists with open tasks: none');
   console.log(`Unread: ${unreadMessages(clientSessionId).length}`);
   void state;
   return 0;

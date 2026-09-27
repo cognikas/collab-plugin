@@ -177,6 +177,40 @@ describe('events', () => {
     expect(readLocalState('s1').contextIndex.map((e) => `${e.key}v${e.version}`)).toEqual(['bv2', 'av1']);
   });
 
+  it('keeps the topic\'s task lists from hello, then from each task notice', () => {
+    const list = (key: string, counts: object, at: string, topic = 'collab-global') => ({
+      key, topic, title: key, createdByName: 'Carlos', createdAt: '2026-09-27T19:00:00Z', updatedAt: at, ...counts,
+    });
+    const notice = (l: object, seq: number) => frame({
+      message: {
+        seq, channel: 'cognikas-dev', fromMemberId: WILLY, fromName: 'Willy', fromHandle: 'willy', fromTopic: 'collab-global',
+        to: { topic: 'collab-global', includeSender: true }, type: 'MESSAGE_TYPE_TASK', text: 'Willy took rc5#1', urgency: 'URGENCY_LOW',
+        sentAt: '2026-09-27T20:05:00Z', task: { list: l, numbers: [1], event: 'TASK_EVENT_CHECKED_OUT' },
+      },
+    });
+
+    handleServerFrame(frame({
+      hello: { ...helloJson.hello, state: { ...helloJson.hello.state, taskLists: [list('rc5', { open: 2 }, '2026-09-27T20:00:00Z')] } },
+    }), context().ctx);
+    expect(readLocalState('s1').taskLists).toMatchObject([{ key: 'rc5', open: 2, inProgress: 0 }]);
+
+    const { ctx, ingested } = context();
+    handleServerFrame(notice(list('rc5', { open: 1, inProgress: 1 }, '2026-09-27T20:05:00Z'), 60), ctx);
+    expect(ingested[0]?.message).toMatchObject({ type: 'task', task: { event: 'checked_out', numbers: [1] } });
+    expect(readLocalState('s1').taskLists).toMatchObject([{ key: 'rc5', open: 1, inProgress: 1 }]);
+
+    // A new list goes first, one of another topic changes nothing, and one with nothing open drops out.
+    handleServerFrame(notice(list('beta', { open: 3 }, '2026-09-27T20:10:00Z'), 61), context().ctx);
+    handleServerFrame(notice(list('other', { open: 1 }, '2026-09-27T20:11:00Z', 'elsewhere'), 62), context().ctx);
+    expect(readLocalState('s1').taskLists.map((l) => l.key)).toEqual(['beta', 'rc5']);
+    handleServerFrame(notice(list('rc5', { done: 2 }, '2026-09-27T20:20:00Z'), 63), context().ctx);
+    expect(readLocalState('s1').taskLists.map((l) => l.key)).toEqual(['beta']);
+
+    // A notice that arrives late never rolls a list back.
+    handleServerFrame(notice(list('beta', { open: 9 }, '2026-09-27T20:00:00Z'), 64), context().ctx);
+    expect(readLocalState('s1').taskLists[0]?.open).toBe(3);
+  });
+
   it('ignores a frame kind from a later minor instead of failing', () => {
     const { ctx, ingested, fatal } = context();
     const later = frame({ decision: { id: 'd1' } });

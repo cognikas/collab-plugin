@@ -12,7 +12,7 @@ export type Urgency = 'low' | 'normal' | 'high';
 
 export const URGENCY_RANK: Record<Urgency, number> = { low: 0, normal: 1, high: 2 };
 
-export type MessageType = 'note' | 'question' | 'done' | 'claim' | 'release' | 'context';
+export type MessageType = 'note' | 'question' | 'done' | 'claim' | 'release' | 'context' | 'task';
 
 export type MemberStatus = 'online' | 'idle' | 'offline';
 
@@ -46,6 +46,51 @@ export interface Message {
   claim?: { claimId: string; expiresAt: number };
   release?: { claimId: string };
   context?: { key: string; version: number };
+  task?: TaskNotice;
+}
+
+/** What a TASK notice carries: the list after the change, and which tasks it was about. */
+export interface TaskNotice {
+  list: TaskList;
+  numbers: number[];
+  event: TaskEvent;
+  previousHolderName?: string;
+}
+
+export type TaskStatus = 'open' | 'in_progress' | 'done' | 'dismissed';
+export type TaskEvent = 'added' | 'checked_out' | 'progress' | 'released' | 'done' | 'dismissed';
+
+/** A task list in a topic, with how many of its tasks are in each status. */
+export interface TaskList {
+  key: string;
+  topic: string;
+  title: string;
+  createdByName: string;
+  createdAt: number;
+  updatedAt: number;
+  open: number;
+  inProgress: number;
+  done: number;
+  dismissed: number;
+}
+
+export interface Task {
+  list: string;
+  topic: string;
+  number: number;
+  title: string;
+  refs?: string[];
+  status: TaskStatus;
+  createdByMemberId: string;
+  createdByName: string;
+  createdAt: number;
+  holder?: { memberId: string; handle: string; name: string; clientSessionId?: string; since: number };
+  lastProgress?: { text: string; percent?: number; authorName: string; at: number };
+  progressCount: number;
+  closedByName?: string;
+  closedAt?: number;
+  resolution?: string;
+  updatedAt: number;
 }
 
 export interface Member {
@@ -108,6 +153,8 @@ export interface ChannelSnapshot {
   members: Member[];
   claims: Claim[];
   contextIndex: ContextSummary[];
+  /** The topic's lists with open tasks. Empty from a server older than protocol 1.0.0-rc.4. */
+  taskLists: TaskList[];
   messages: Message[];
   cursor: number;
   latestSeq: number;

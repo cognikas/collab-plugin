@@ -1,11 +1,13 @@
 import {
-  create, DonePayloadSchema, MemberStatus, MessageType as WireMessageType, SendRequestSchema, timestampMs, Urgency as WireUrgency,
+  create, DonePayloadSchema, MemberStatus, MessageType as WireMessageType, SendRequestSchema, TaskEvent as WireTaskEvent,
+  TaskStatus as WireTaskStatus, timestampMs, Urgency as WireUrgency,
   type ChannelState as WireChannelState, type Claim as WireClaim, type ContextEntry as WireContextEntry,
   type ContextSummary as WireContextSummary, type Member as WireMember, type Message as WireMessage, type SendRequest,
-  type SendResponse, type Timestamp,
+  type SendResponse, type Task as WireTask, type TaskList as WireTaskList, type Timestamp,
 } from '@collab/protocol';
 import type {
-  ChannelSnapshot, Claim, ContextEntry, ContextSummary, Member, Message, MessageType, OutgoingMessage, SendResult, Urgency,
+  ChannelSnapshot, Claim, ContextEntry, ContextSummary, Member, Message, MessageType, OutgoingMessage, SendResult, Task,
+  TaskEvent, TaskList, TaskStatus, Urgency,
 } from './model.js';
 
 /**
@@ -47,8 +49,81 @@ export function messageTypeOf(value: WireMessageType): MessageType {
     case WireMessageType.CLAIM: return 'claim';
     case WireMessageType.RELEASE: return 'release';
     case WireMessageType.CONTEXT: return 'context';
+    case WireMessageType.TASK: return 'task';
     default: return 'note';
   }
+}
+
+/** An unknown status reads as open: something to look at, rather than something hidden. */
+export function taskStatusOf(value: WireTaskStatus): TaskStatus {
+  switch (value) {
+    case WireTaskStatus.IN_PROGRESS: return 'in_progress';
+    case WireTaskStatus.DONE: return 'done';
+    case WireTaskStatus.DISMISSED: return 'dismissed';
+    default: return 'open';
+  }
+}
+
+function taskEventOf(value: WireTaskEvent): TaskEvent {
+  switch (value) {
+    case WireTaskEvent.CHECKED_OUT: return 'checked_out';
+    case WireTaskEvent.PROGRESS: return 'progress';
+    case WireTaskEvent.RELEASED: return 'released';
+    case WireTaskEvent.DONE: return 'done';
+    case WireTaskEvent.DISMISSED: return 'dismissed';
+    default: return 'added';
+  }
+}
+
+export function toTaskList(list: WireTaskList): TaskList {
+  return {
+    key: list.key,
+    topic: list.topic,
+    title: list.title,
+    createdByName: list.createdByName,
+    createdAt: ms(list.createdAt),
+    updatedAt: ms(list.updatedAt),
+    open: list.open,
+    inProgress: list.inProgress,
+    done: list.done,
+    dismissed: list.dismissed,
+  };
+}
+
+export function toTask(task: WireTask): Task {
+  return {
+    list: task.list,
+    topic: task.topic,
+    number: task.number,
+    title: task.title,
+    ...(task.refs.length ? { refs: [...task.refs] } : {}),
+    status: taskStatusOf(task.status),
+    createdByMemberId: task.createdByMemberId,
+    createdByName: task.createdByName,
+    createdAt: ms(task.createdAt),
+    ...(task.holder ? {
+      holder: {
+        memberId: task.holder.memberId,
+        handle: task.holder.handle,
+        name: task.holder.name,
+        clientSessionId: opt(task.holder.clientSessionId),
+        since: ms(task.holder.since),
+      },
+    } : {}),
+    ...(task.lastProgress ? {
+      lastProgress: {
+        text: task.lastProgress.text,
+        percent: task.lastProgress.percent,
+        authorName: task.lastProgress.authorName,
+        at: ms(task.lastProgress.at),
+      },
+    } : {}),
+    progressCount: task.progressCount,
+    closedByName: opt(task.closedByName),
+    closedAt: task.closedAt ? ms(task.closedAt) : undefined,
+    resolution: opt(task.resolution),
+    updatedAt: ms(task.updatedAt),
+  };
 }
 
 function toWireMessageType(value: OutgoingMessage['type']): WireMessageType {
@@ -95,6 +170,16 @@ export function toMessage(message: WireMessage): Message {
     case 'claim': local.claim = { claimId: payload.value.claimId, expiresAt: ms(payload.value.expiresAt) }; break;
     case 'release': local.release = { claimId: payload.value.claimId }; break;
     case 'context': local.context = { key: payload.value.key, version: payload.value.version }; break;
+    case 'task':
+      if (payload.value.list) {
+        local.task = {
+          list: toTaskList(payload.value.list),
+          numbers: [...payload.value.numbers],
+          event: taskEventOf(payload.value.event),
+          ...(payload.value.previousHolderName ? { previousHolderName: payload.value.previousHolderName } : {}),
+        };
+      }
+      break;
     default: break;
   }
   return local;
@@ -158,6 +243,7 @@ export function toSnapshot(state: WireChannelState): ChannelSnapshot {
     members: state.members.map(toMember),
     claims: state.claims.map(toClaim),
     contextIndex: state.contextIndex.map(toContextSummary),
+    taskLists: state.taskLists.map(toTaskList),
     messages: state.messages.map(toMessage),
     cursor: state.cursor,
     latestSeq: state.latestSeq,

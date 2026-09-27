@@ -1,6 +1,6 @@
 ---
 name: collaboration-channel
-description: Use when another developer is working on the same project in their own Claude Code session and you need to coordinate with them — sending or answering messages, announcing finished work, sharing context instead of pasting it, or claiming files before a refactor. Also use when you are blocked waiting on something they are building.
+description: Use when another developer is working on the same project in their own Claude Code session and you need to coordinate with them — sending or answering messages, announcing finished work, sharing context instead of pasting it, claiming files before a refactor, or splitting work through a shared task list. Also use when you are blocked waiting on something they are building.
 ---
 
 # Working alongside another session
@@ -55,6 +55,24 @@ quietly rewriting the same code. Release with `collab_release` when you are done
 their own, so a forgotten one is not a disaster, but releasing promptly keeps the warnings
 meaningful.
 
+**Lay out shared work as a task list.** When work in a topic has several parts that more than one
+session could take, or follow-ups nobody owns yet, put them on a list with `collab_task_add` (a
+new key creates the list, e.g. `rc5`). Before starting on something in a topic, look at
+`collab_tasks`: it may already be on a list, maybe taken. Then:
+
+- `collab_task_update` with `checkout` before you start a task, so nobody else does it too. Only
+  one member holds a task; a checkout nobody has updated for 2 hours can be taken over with
+  `takeover`.
+- `progress`, with a short note and an optional percent, at real milestones. Not at every step:
+  everyone in the topic sees it.
+- `done`, with one line on what was done, when it is finished. This closes the task and tells the
+  topic, your other sessions included, so there is no need for a `collab_done` as well.
+- `dismiss`, with the reason, when it will not be done after all. It stays on the list as
+  dismissed, so the decision is not lost. `release` gives a task back if you stop working on it.
+
+Closed tasks are hidden by default; `collab_tasks` with `show: "closed"` lists what was done and
+dismissed, which is the record of the work.
+
 **Use `collab_wait` only when you are genuinely blocked.** It blocks your turn until a message for
 this session arrives. It is right for "I cannot integrate until their endpoint exists". It is wrong
 as a polling loop, and wrong when you could be doing other useful work first: do that work, then
@@ -85,8 +103,8 @@ The difference is whether the peer can act without asking you a follow-up questi
 
 ## Reading the room
 
-`collab_status` tells you who is online and in which topics, what has been claimed in yours, and
-how much you have not read. Check it before you start something substantial: someone may already be
+`collab_status` tells you who is online and in which topics, what has been claimed in yours, which
+task lists have open tasks, and how much you have not read. Check it before you start something substantial: someone may already be
 in that code.
 
 If the channel is disconnected, the tools say so and fall back to cached state. Say so plainly

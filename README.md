@@ -31,6 +31,7 @@ son compatibles: 1.0 necesita el endpoint y una invitación del backend nuevo.
 | Ana decide el diseño de auth | Lo publica con `collab_context_put`; Bruno lo lee con `collab_context_get` en vez de pedírselo |
 | Ana va a refactorizar `src/api/**` | Lo reserva con `collab_claim`; a Bruno se le pide confirmación antes de editar ahí |
 | Bruno no puede seguir sin el endpoint | `collab_wait` bloquea su turno hasta que llegue el aviso, sin polling |
+| El trabajo del release tiene varias partes | Ana las pone en una lista con `collab_task_add`; cada sesión toma una con `collab_task_update`, reporta avance y la cierra, y el tema se entera de cada cierre |
 | Nadie más está conectado | El mensaje sale también como aviso offline (email opcional, vía SNS) |
 
 ## Temas y destinatarios
@@ -51,8 +52,9 @@ A una persona se la nombra por su **handle**, que sale de su nombre visible (`pr
 `prueba-fake-peer`) y es único en el canal. `/collab-status` muestra el tuyo, tu tema, y en qué temas
 está cada uno.
 
-Las reservas (`collab_claim`) y el contexto compartido también son del tema: solo avisan y se ven
-dentro de él. El contexto de otro tema se puede leer nombrándolo en `collab_context_get`.
+Las reservas (`collab_claim`), el contexto compartido y las listas de tareas también son del tema:
+solo avisan y se ven dentro de él. El contexto y las tareas de otro tema se pueden leer nombrándolo
+(`topic` en `collab_context_get` y `collab_tasks`).
 
 Para fijar el tema de un proyecto, pon `COLLAB_TOPIC` en el `env` de su
 `.claude/settings.local.json`; el campo `topic` de `/config` lo fija para todos. Una sesión conserva

@@ -4,7 +4,7 @@ import {
 } from '@collab/protocol';
 import { PLUGIN_NAME } from './channel.js';
 import type { Message } from './model.js';
-import { readCursor, readLocalState, writeCursor, writeLocalState } from './state.js';
+import { applyTaskList, readCursor, readLocalState, writeCursor, writeLocalState } from './state.js';
 import { PLUGIN_VERSION } from './version.js';
 import { toClaim, toContextSummary, toMember, toMessage, toSnapshot } from './wire.js';
 
@@ -103,7 +103,7 @@ export function handleServerFrame(frame: ServerFrame, ctx: FrameContext): boolea
       const protocol = event.value.protocol ? formatVersion(event.value.protocol) : '?';
       writeLocalState(id, {
         connected: true, channel: state.channel, self: state.self, handle: state.handle, topic: state.topic,
-        members: state.members, claims: state.claims, contextIndex: state.contextIndex,
+        members: state.members, claims: state.claims, contextIndex: state.contextIndex, taskLists: state.taskLists,
         latestSeq: state.latestSeq, lastError: undefined, fatal: undefined,
         server: `${event.value.serverVersion || 'unknown'} (protocol ${protocol})`,
       });
@@ -114,6 +114,8 @@ export function handleServerFrame(frame: ServerFrame, ctx: FrameContext): boolea
       const message = toMessage(event.value);
       ctx.ingest(message, { quiet: false });
       writeLocalState(id, { latestSeq: Math.max(readLocalState(id).latestSeq, message.seq) });
+      // Task notices carry their list's counts, which is what keeps the summary current.
+      if (message.task) applyTaskList(id, message.task.list);
       return false;
     }
 

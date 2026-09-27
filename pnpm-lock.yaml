@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@collab/protocol':
-        specifier: github:cognikas/collab-protocol#v1.0.0-rc.3&path:/ts
-        version: git+https://github.com/cognikas/collab-protocol.git#3b36e8a025860b6ff513421139515af20dc20acd&path:/ts
+        specifier: github:cognikas/collab-protocol#v1.0.0-rc.4&path:/ts
+        version: git+https://github.com/cognikas/collab-protocol.git#ad2de364e6acd34807f41ffc07020d6be2faa01b&path:/ts
       typescript:
         specifier: ~7.0.2
         version: 7.0.2
@@ -21,8 +21,8 @@ importers:
   plugin:
     dependencies:
       '@collab/protocol':
-        specifier: github:cognikas/collab-protocol#v1.0.0-rc.3&path:/ts
-        version: git+https://github.com/cognikas/collab-protocol.git#3b36e8a025860b6ff513421139515af20dc20acd&path:/ts
+        specifier: github:cognikas/collab-protocol#v1.0.0-rc.4&path:/ts
+        version: git+https://github.com/cognikas/collab-protocol.git#ad2de364e6acd34807f41ffc07020d6be2faa01b&path:/ts
       '@modelcontextprotocol/sdk':
         specifier: 1.30.0
         version: 1.30.0(zod@4.6.5)
@@ -54,9 +54,9 @@ packages:
   '@bufbuild/protobuf@2.15.0':
     resolution: {integrity: sha512-DAheWUkVr/SJTWCc+lg9dhY0eN4SaWlf4+bG1KzHeXbnqt0AfB/NX0Z+VunGlM1ki1B4zVvye27MpKh/svySUA==}
 
-  '@collab/protocol@git+https://github.com/cognikas/collab-protocol.git#3b36e8a025860b6ff513421139515af20dc20acd&path:/ts':
-    resolution: {commit: 3b36e8a025860b6ff513421139515af20dc20acd, path: /ts, repo: https://github.com/cognikas/collab-protocol.git, type: git}
-    version: 1.0.0-rc.3
+  '@collab/protocol@git+https://github.com/cognikas/collab-protocol.git#ad2de364e6acd34807f41ffc07020d6be2faa01b&path:/ts':
+    resolution: {commit: ad2de364e6acd34807f41ffc07020d6be2faa01b, path: /ts, repo: https://github.com/cognikas/collab-protocol.git, type: git}
+    version: 1.0.0-rc.4
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -1122,7 +1122,7 @@ snapshots:
 
   '@bufbuild/protobuf@2.15.0': {}
 
-  '@collab/protocol@git+https://github.com/cognikas/collab-protocol.git#3b36e8a025860b6ff513421139515af20dc20acd&path:/ts':
+  '@collab/protocol@git+https://github.com/cognikas/collab-protocol.git#ad2de364e6acd34807f41ffc07020d6be2faa01b&path:/ts':
     dependencies:
       '@bufbuild/protobuf': 2.15.0
 
