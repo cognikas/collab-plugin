@@ -7892,7 +7892,7 @@ var NullValue;
   NullValue2[NullValue2["NULL_VALUE"] = 0] = "NULL_VALUE";
 })(NullValue || (NullValue = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/model_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/model_pb.js
 var file_collab_v1_model = /* @__PURE__ */ fileDesc("ChVjb2xsYWIvdjEvbW9kZWwucHJvdG8SCWNvbGxhYi52MSJFCglSZWNpcGllbnQSDgoGaGFuZGxlGAEgASgJEg0KBXRvcGljGAIgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAMgASgJInAKCUFkZHJlc3NlZRIRCgltZW1iZXJfaWQYASABKAkSDgoGaGFuZGxlGAIgASgJEg0KBXRvcGljGAMgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAQgASgJEhYKDmluY2x1ZGVfc2VuZGVyGAUgASgIIrIECgdNZXNzYWdlEgsKA3NlcRgBIAEoDRIPCgdjaGFubmVsGAIgASgJEhYKDmZyb21fbWVtYmVyX2lkGAMgASgJEhEKCWZyb21fbmFtZRgEIAEoCRITCgtmcm9tX2hhbmRsZRgFIAEoCRISCgpmcm9tX3RvcGljGAYgASgJEiAKAnRvGAcgASgLMhQuY29sbGFiLnYxLkFkZHJlc3NlZRIkCgR0eXBlGAggASgOMhYuY29sbGFiLnYxLk1lc3NhZ2VUeXBlEgwKBHRleHQYCSABKAkSIwoHdXJnZW5jeRgKIAEoDjISLmNvbGxhYi52MS5VcmdlbmN5EgwKBHJlZnMYCyADKAkSKwoHc2VudF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHgoWZnJvbV9jbGllbnRfc2Vzc2lvbl9pZBgNIAEoCRImCgRkb25lGBQgASgLMhYuY29sbGFiLnYxLkRvbmVQYXlsb2FkSAASKAoFY2xhaW0YFSABKAsyFy5jb2xsYWIudjEuQ2xhaW1QYXlsb2FkSAASLAoHcmVsZWFzZRgWIAEoCzIZLmNvbGxhYi52MS5SZWxlYXNlUGF5bG9hZEgAEiwKB2NvbnRleHQYFyABKAsyGS5jb2xsYWIudjEuQ29udGV4dFBheWxvYWRIABImCgR0YXNrGBggASgLMhYuY29sbGFiLnYxLlRhc2tQYXlsb2FkSABCCQoHcGF5bG9hZCIuCgtEb25lUGF5bG9hZBIMCgR0YXNrGAEgASgJEhEKCWF1dG9tYXRpYxgCIAEoCCJQCgxDbGFpbVBheWxvYWQSEAoIY2xhaW1faWQYASABKAkSLgoKZXhwaXJlc19hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiIgoOUmVsZWFzZVBheWxvYWQSEAoIY2xhaW1faWQYASABKAkiLgoOQ29udGV4dFBheWxvYWQSCwoDa2V5GAEgASgJEg8KB3ZlcnNpb24YAiABKA0ihAEKC1Rhc2tQYXlsb2FkEiEKBGxpc3QYASABKAsyEy5jb2xsYWIudjEuVGFza0xpc3QSDwoHbnVtYmVycxgCIAMoDRIjCgVldmVudBgDIAEoDjIULmNvbGxhYi52MS5UYXNrRXZlbnQSHAoUcHJldmlvdXNfaG9sZGVyX25hbWUYBCABKAkiiwIKBk1lbWJlchIRCgltZW1iZXJfaWQYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEg4KBmhhbmRsZRgDIAEoCRInCgZzdGF0dXMYBCABKA4yFy5jb2xsYWIudjEuTWVtYmVyU3RhdHVzEgwKBHJlcG8YBSABKAkSDgoGYnJhbmNoGAYgASgJEhMKC2Nvbm5lY3Rpb25zGAcgASgNEg4KBnRvcGljcxgIIAMoCRIwCgxsYXN0X3NlZW5fYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEioKCHNlc3Npb25zGAogAygLMhguY29sbGFiLnYxLk1lbWJlclNlc3Npb24iiQEKDU1lbWJlclNlc3Npb24SGQoRY2xpZW50X3Nlc3Npb25faWQYASABKAkSDQoFdG9waWMYAiABKAkSDAoEcmVwbxgDIAEoCRIOCgZicmFuY2gYBCABKAkSMAoMY29ubmVjdGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCLSAQoFQ2xhaW0SEAoIY2xhaW1faWQYASABKAkSFwoPb3duZXJfbWVtYmVyX2lkGAIgASgJEhIKCm93bmVyX25hbWUYAyABKAkSDQoFdG9waWMYBCABKAkSDQoFcGF0aHMYBSADKAkSDAoEbm90ZRgGIAEoCRIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpleHBpcmVzX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCK5AQoMQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgNEg0KBXRpdGxlGAMgASgJEg8KB3N1bW1hcnkYBCABKAkSDAoEYm9keRgFIAEoCRIYChBhdXRob3JfbWVtYmVyX2lkGAYgASgJEhMKC2F1dGhvcl9uYW1lGAcgASgJEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIpMBCg5Db250ZXh0U3VtbWFyeRILCgNrZXkYASABKAkSDwoHdmVyc2lvbhgCIAEoDRINCgV0aXRsZRgDIAEoCRIPCgdzdW1tYXJ5GAQgASgJEhMKC2F1dGhvcl9uYW1lGAUgASgJEi4KCmNyZWF0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIpACCghUYXNrTGlzdBILCgNrZXkYASABKAkSDQoFdG9waWMYAiABKAkSDQoFdGl0bGUYAyABKAkSHAoUY3JlYXRlZF9ieV9tZW1iZXJfaWQYBCABKAkSFwoPY3JlYXRlZF9ieV9uYW1lGAUgASgJEi4KCmNyZWF0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgwKBG9wZW4YCCABKA0SEwoLaW5fcHJvZ3Jlc3MYCSABKA0SDAoEZG9uZRgKIAEoDRIRCglkaXNtaXNzZWQYCyABKA0igwEKClRhc2tIb2xkZXISEQoJbWVtYmVyX2lkGAEgASgJEg4KBmhhbmRsZRgCIAEoCRIMCgRuYW1lGAMgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAQgASgJEikKBXNpbmNlGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJ3CghUYXNrTm90ZRIMCgR0ZXh0GAEgASgJEhQKB3BlcmNlbnQYAiABKA1IAIgBARITCgthdXRob3JfbmFtZRgDIAEoCRImCgJhdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCCgoIX3BlcmNlbnQi8QMKBFRhc2sSDAoEbGlzdBgBIAEoCRINCgV0b3BpYxgCIAEoCRIOCgZudW1iZXIYAyABKA0SDQoFdGl0bGUYBCABKAkSDAoEcmVmcxgFIAMoCRIlCgZzdGF0dXMYBiABKA4yFS5jb2xsYWIudjEuVGFza1N0YXR1cxIcChRjcmVhdGVkX2J5X21lbWJlcl9pZBgHIAEoCRIXCg9jcmVhdGVkX2J5X25hbWUYCCABKAkSLgoKY3JlYXRlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASJQoGaG9sZGVyGAogASgLMhUuY29sbGFiLnYxLlRhc2tIb2xkZXISKgoNbGFzdF9wcm9ncmVzcxgLIAEoCzITLmNvbGxhYi52MS5UYXNrTm90ZRIWCg5wcm9ncmVzc19jb3VudBgMIAEoDRIbChNjbG9zZWRfYnlfbWVtYmVyX2lkGA0gASgJEhYKDmNsb3NlZF9ieV9uYW1lGA4gASgJEi0KCWNsb3NlZF9hdBgPIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKcmVzb2x1dGlvbhgQIAEoCRIuCgp1cGRhdGVkX2F0GBEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCLBAgoMQ2hhbm5lbFN0YXRlEg8KB2NoYW5uZWwYASABKAkSFgoOc2VsZl9tZW1iZXJfaWQYAiABKAkSDgoGaGFuZGxlGAMgASgJEg0KBXRvcGljGAQgASgJEiIKB21lbWJlcnMYBSADKAsyES5jb2xsYWIudjEuTWVtYmVyEiAKBmNsYWltcxgGIAMoCzIQLmNvbGxhYi52MS5DbGFpbRIwCg1jb250ZXh0X2luZGV4GAcgAygLMhkuY29sbGFiLnYxLkNvbnRleHRTdW1tYXJ5EiQKCG1lc3NhZ2VzGAggAygLMhIuY29sbGFiLnYxLk1lc3NhZ2USDgoGY3Vyc29yGAkgASgNEhIKCmxhdGVzdF9zZXEYCiABKA0SJwoKdGFza19saXN0cxgLIAMoCzITLmNvbGxhYi52MS5UYXNrTGlzdCIvCg9Qcm90b2NvbFZlcnNpb24SDQoFbWFqb3IYASABKA0SDQoFbWlub3IYAiABKA0ibwoKQ2xpZW50SW5mbxIMCgRuYW1lGAEgASgJEg8KB3ZlcnNpb24YAiABKAkSLAoIcHJvdG9jb2wYAyABKAsyGi5jb2xsYWIudjEuUHJvdG9jb2xWZXJzaW9uEhQKDGNhcGFiaWxpdGllcxgEIAMoCSpZCgdVcmdlbmN5EhcKE1VSR0VOQ1lfVU5TUEVDSUZJRUQQABIPCgtVUkdFTkNZX0xPVxABEhIKDlVSR0VOQ1lfTk9STUFMEAISEAoMVVJHRU5DWV9ISUdIEAMq1wEKC01lc3NhZ2VUeXBlEhwKGE1FU1NBR0VfVFlQRV9VTlNQRUNJRklFRBAAEhUKEU1FU1NBR0VfVFlQRV9OT1RFEAESGQoVTUVTU0FHRV9UWVBFX1FVRVNUSU9OEAISFQoRTUVTU0FHRV9UWVBFX0RPTkUQAxIWChJNRVNTQUdFX1RZUEVfQ0xBSU0QBBIYChRNRVNTQUdFX1RZUEVfUkVMRUFTRRAFEhgKFE1FU1NBR0VfVFlQRV9DT05URVhUEAYSFQoRTUVTU0FHRV9UWVBFX1RBU0sQByp6CgxNZW1iZXJTdGF0dXMSHQoZTUVNQkVSX1NUQVRVU19VTlNQRUNJRklFRBAAEhgKFE1FTUJFUl9TVEFUVVNfT05MSU5FEAESFgoSTUVNQkVSX1NUQVRVU19JRExFEAISGQoVTUVNQkVSX1NUQVRVU19PRkZMSU5FEAMqjQEKClRhc2tTdGF0dXMSGwoXVEFTS19TVEFUVVNfVU5TUEVDSUZJRUQQABIUChBUQVNLX1NUQVRVU19PUEVOEAESGwoXVEFTS19TVEFUVVNfSU5fUFJPR1JFU1MQAhIUChBUQVNLX1NUQVRVU19ET05FEAMSGQoVVEFTS19TVEFUVVNfRElTTUlTU0VEEAQqugEKCVRhc2tFdmVudBIaChZUQVNLX0VWRU5UX1VOU1BFQ0lGSUVEEAASFAoQVEFTS19FVkVOVF9BRERFRBABEhoKFlRBU0tfRVZFTlRfQ0hFQ0tFRF9PVVQQAhIXChNUQVNLX0VWRU5UX1BST0dSRVNTEAMSFwoTVEFTS19FVkVOVF9SRUxFQVNFRBAEEhMKD1RBU0tfRVZFTlRfRE9ORRAFEhgKFFRBU0tfRVZFTlRfRElTTUlTU0VEEAZiBnByb3RvMw", [file_google_protobuf_timestamp]);
 var DonePayloadSchema = /* @__PURE__ */ messageDesc(file_collab_v1_model, 3);
 var ProtocolVersionSchema = /* @__PURE__ */ messageDesc(file_collab_v1_model, 18);
@@ -7940,7 +7940,7 @@ var TaskEvent;
   TaskEvent2[TaskEvent2["DISMISSED"] = 6] = "DISMISSED";
 })(TaskEvent || (TaskEvent = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/errors_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/errors_pb.js
 var file_collab_v1_errors = /* @__PURE__ */ fileDesc("ChZjb2xsYWIvdjEvZXJyb3JzLnByb3RvEgljb2xsYWIudjEiVgoLRXJyb3JEZXRhaWwSIgoEY29kZRgBIAEoDjIULmNvbGxhYi52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRISCgpyZXF1ZXN0X2lkGAMgASgJKtMGCglFcnJvckNvZGUSGgoWRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEhcKE0VSUk9SX0NPREVfSU5URVJOQUwQARIaChZFUlJPUl9DT0RFX0JBRF9SRVFVRVNUEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIeChpFUlJPUl9DT0RFX1VOQVVUSEVOVElDQVRFRBAEEhYKEkVSUk9SX0NPREVfUkVWT0tFRBAFEiMKH0VSUk9SX0NPREVfVU5TVVBQT1JURURfUFJPVE9DT0wQBhIhCh1FUlJPUl9DT0RFX1VOS05PV05fQ09OTkVDVElPThAHEh0KGUVSUk9SX0NPREVfSU5WQUxJRF9JTlZJVEUQCBIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAJEhkKFUVSUk9SX0NPREVfTkFNRV9UQUtFThAKEh4KGkVSUk9SX0NPREVfSU5WQUxJRF9DSEFOTkVMEAsSHAoYRVJST1JfQ09ERV9JTlZBTElEX1RPUElDEAwSJQohRVJST1JfQ09ERV9JTlZBTElEX0NMSUVOVF9TRVNTSU9OEA0SHQoZRVJST1JfQ09ERV9JTlZBTElEX01FTUJFUhAOEhsKF0VSUk9SX0NPREVfTk9fUkVDSVBJRU5UEA8SHQoZRVJST1JfQ09ERV9VTktOT1dOX0hBTkRMRRAQEhwKGEVSUk9SX0NPREVfRU1QVFlfTUVTU0FHRRAREh8KG0VSUk9SX0NPREVfTUVTU0FHRV9UT09fTE9ORxASEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9UWVBFEBMSFwoTRVJST1JfQ09ERV9OT19QQVRIUxAUEh0KGUVSUk9SX0NPREVfVE9PX01BTllfUEFUSFMQFRIaChZFUlJPUl9DT0RFX0lOVkFMSURfS0VZEBYSIAocRVJST1JfQ09ERV9DT05URVhUX1RPT19MQVJHRRAXEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9UQVNLEBgSGQoVRVJST1JfQ09ERV9UQVNLX1RBS0VOEBkSGgoWRVJST1JfQ09ERV9UQVNLX0NMT1NFRBAaEh4KGkVSUk9SX0NPREVfTk9UX1RBU0tfSE9MREVSEBtiBnByb3RvMw");
 var ErrorDetailSchema = /* @__PURE__ */ messageDesc(file_collab_v1_errors, 0);
 var ErrorCode;
@@ -7975,7 +7975,7 @@ var ErrorCode;
   ErrorCode2[ErrorCode2["NOT_TASK_HOLDER"] = 27] = "NOT_TASK_HOLDER";
 })(ErrorCode || (ErrorCode = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/channel_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/channel_pb.js
 var file_collab_v1_channel = /* @__PURE__ */ fileDesc("Chdjb2xsYWIvdjEvY2hhbm5lbC5wcm90bxIJY29sbGFiLnYxInUKEFN1YnNjcmliZVJlcXVlc3QSJQoGY2xpZW50GAEgASgLMhUuY29sbGFiLnYxLkNsaWVudEluZm8SEgoFc2luY2UYAiABKA1IAIgBARIMCgRyZXBvGAMgASgJEg4KBmJyYW5jaBgEIAEoCUIICgZfc2luY2Ui8QEKEVN1YnNjcmliZVJlc3BvbnNlEiYKBWhlbGxvGAEgASgLMhUuY29sbGFiLnYxLkhlbGxvRXZlbnRIABIlCgdtZXNzYWdlGAIgASgLMhIuY29sbGFiLnYxLk1lc3NhZ2VIABIsCghwcmVzZW5jZRgDIAEoCzIYLmNvbGxhYi52MS5QcmVzZW5jZUV2ZW50SAASKAoGY2xhaW1zGAQgASgLMhYuY29sbGFiLnYxLkNsYWltc0V2ZW50SAASLAoHY29udGV4dBgFIAEoCzIZLmNvbGxhYi52MS5Db250ZXh0U3VtbWFyeUgAQgcKBWV2ZW50IpABCgpIZWxsb0V2ZW50EiYKBXN0YXRlGAEgASgLMhcuY29sbGFiLnYxLkNoYW5uZWxTdGF0ZRIsCghwcm90b2NvbBgCIAEoCzIaLmNvbGxhYi52MS5Qcm90b2NvbFZlcnNpb24SFAoMY2FwYWJpbGl0aWVzGAMgAygJEhYKDnNlcnZlcl92ZXJzaW9uGAQgASgJIjMKDVByZXNlbmNlRXZlbnQSIgoHbWVtYmVycxgBIAMoCzIRLmNvbGxhYi52MS5NZW1iZXIiPgoLQ2xhaW1zRXZlbnQSDQoFdG9waWMYASABKAkSIAoGY2xhaW1zGAIgAygLMhAuY29sbGFiLnYxLkNsYWltIj4KD0dldFN0YXRlUmVxdWVzdBISCgVzaW5jZRgBIAEoDUgAiAEBEg0KBWxpbWl0GAIgASgNQggKBl9zaW5jZSI6ChBHZXRTdGF0ZVJlc3BvbnNlEiYKBXN0YXRlGAEgASgLMhcuY29sbGFiLnYxLkNoYW5uZWxTdGF0ZSK8AQoLU2VuZFJlcXVlc3QSJAoEdHlwZRgBIAEoDjIWLmNvbGxhYi52MS5NZXNzYWdlVHlwZRIMCgR0ZXh0GAIgASgJEiAKAnRvGAMgASgLMhQuY29sbGFiLnYxLlJlY2lwaWVudBIjCgd1cmdlbmN5GAQgASgOMhIuY29sbGFiLnYxLlVyZ2VuY3kSDAoEcmVmcxgFIAMoCRIkCgRkb25lGAYgASgLMhYuY29sbGFiLnYxLkRvbmVQYXlsb2FkIkkKDFNlbmRSZXNwb25zZRILCgNzZXEYASABKA0SEQoJZGVsaXZlcmVkGAIgASgNEhkKEWRlbGl2ZXJlZF9vZmZsaW5lGAMgASgIIhwKCkFja1JlcXVlc3QSDgoGY3Vyc29yGAEgASgNIg0KC0Fja1Jlc3BvbnNlIkAKDENsYWltUmVxdWVzdBINCgVwYXRocxgBIAMoCRIMCgRub3RlGAIgASgJEhMKC3R0bF9zZWNvbmRzGAMgASgNIjAKDUNsYWltUmVzcG9uc2USHwoFY2xhaW0YASABKAsyEC5jb2xsYWIudjEuQ2xhaW0iIgoOUmVsZWFzZVJlcXVlc3QSEAoIY2xhaW1faWQYASABKAkiIwoPUmVsZWFzZVJlc3BvbnNlEhAKCHJlbGVhc2VkGAEgASgIIk4KEVB1dENvbnRleHRSZXF1ZXN0EgsKA2tleRgBIAEoCRINCgV0aXRsZRgCIAEoCRIPCgdzdW1tYXJ5GAMgASgJEgwKBGJvZHkYBCABKAkiPAoSUHV0Q29udGV4dFJlc3BvbnNlEiYKBWVudHJ5GAEgASgLMhcuY29sbGFiLnYxLkNvbnRleHRFbnRyeSJRChFHZXRDb250ZXh0UmVxdWVzdBILCgNrZXkYASABKAkSFAoHdmVyc2lvbhgCIAEoDUgAiAEBEg0KBXRvcGljGAMgASgJQgoKCF92ZXJzaW9uIjwKEkdldENvbnRleHRSZXNwb25zZRImCgVlbnRyeRgBIAEoCzIXLmNvbGxhYi52MS5Db250ZXh0RW50cnkiWwoSU2V0UHJlc2VuY2VSZXF1ZXN0EicKBnN0YXR1cxgBIAEoDjIXLmNvbGxhYi52MS5NZW1iZXJTdGF0dXMSDAoEcmVwbxgCIAEoCRIOCgZicmFuY2gYAyABKAkiFQoTU2V0UHJlc2VuY2VSZXNwb25zZSIuCg5IaXN0b3J5UmVxdWVzdBINCgVzaW5jZRgBIAEoDRINCgVsaW1pdBgCIAEoDSI3Cg9IaXN0b3J5UmVzcG9uc2USJAoIbWVzc2FnZXMYASADKAsyEi5jb2xsYWIudjEuTWVzc2FnZSISChBIZWFydGJlYXRSZXF1ZXN0IkQKEUhlYXJ0YmVhdFJlc3BvbnNlEi8KC3NlcnZlcl90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIzChVDcmVhdGVUYXNrTGlzdFJlcXVlc3QSCwoDa2V5GAEgASgJEg0KBXRpdGxlGAIgASgJIkwKFkNyZWF0ZVRhc2tMaXN0UmVzcG9uc2USIQoEbGlzdBgBIAEoCzITLmNvbGxhYi52MS5UYXNrTGlzdBIPCgdjcmVhdGVkGAIgASgIIiYKB05ld1Rhc2sSDQoFdGl0bGUYASABKAkSDAoEcmVmcxgCIAMoCSJCCg9BZGRUYXNrc1JlcXVlc3QSDAoEbGlzdBgBIAEoCRIhCgV0YXNrcxgCIAMoCzISLmNvbGxhYi52MS5OZXdUYXNrIlUKEEFkZFRhc2tzUmVzcG9uc2USHgoFdGFza3MYASADKAsyDy5jb2xsYWIudjEuVGFzaxIhCgRsaXN0GAIgASgLMhMuY29sbGFiLnYxLlRhc2tMaXN0IiAKDFRhc2tDaGVja291dBIQCgh0YWtlb3ZlchgBIAEoCCI+CgxUYXNrUHJvZ3Jlc3MSDAoEdGV4dBgBIAEoCRIUCgdwZXJjZW50GAIgASgNSACIAQFCCgoIX3BlcmNlbnQiGwoLVGFza1JlbGVhc2USDAoEbm90ZRgBIAEoCSIdCgpUYXNrRmluaXNoEg8KB3N1bW1hcnkYASABKAkiHQoLVGFza0Rpc21pc3MSDgoGcmVhc29uGAEgASgJIqMCChFVcGRhdGVUYXNrUmVxdWVzdBINCgV0b3BpYxgBIAEoCRIMCgRsaXN0GAIgASgJEg4KBm51bWJlchgDIAEoDRIrCghjaGVja291dBgKIAEoCzIXLmNvbGxhYi52MS5UYXNrQ2hlY2tvdXRIABIrCghwcm9ncmVzcxgLIAEoCzIXLmNvbGxhYi52MS5UYXNrUHJvZ3Jlc3NIABIpCgdyZWxlYXNlGAwgASgLMhYuY29sbGFiLnYxLlRhc2tSZWxlYXNlSAASJwoGZmluaXNoGA0gASgLMhUuY29sbGFiLnYxLlRhc2tGaW5pc2hIABIpCgdkaXNtaXNzGA4gASgLMhYuY29sbGFiLnYxLlRhc2tEaXNtaXNzSABCCAoGY2hhbmdlIlYKElVwZGF0ZVRhc2tSZXNwb25zZRIdCgR0YXNrGAEgASgLMg8uY29sbGFiLnYxLlRhc2sSIQoEbGlzdBgCIAEoCzITLmNvbGxhYi52MS5UYXNrTGlzdCJlChBMaXN0VGFza3NSZXF1ZXN0Eg0KBXRvcGljGAEgASgJEgwKBGxpc3QYAiABKAkSJQoGZmlsdGVyGAMgASgOMhUuY29sbGFiLnYxLlRhc2tGaWx0ZXISDQoFbGltaXQYBCABKA0iagoRTGlzdFRhc2tzUmVzcG9uc2USIgoFbGlzdHMYASADKAsyEy5jb2xsYWIudjEuVGFza0xpc3QSHgoFdGFza3MYAiADKAsyDy5jb2xsYWIudjEuVGFzaxIRCgl0cnVuY2F0ZWQYAyABKAgqbAoKVGFza0ZpbHRlchIbChdUQVNLX0ZJTFRFUl9VTlNQRUNJRklFRBAAEhQKEFRBU0tfRklMVEVSX09QRU4QARIWChJUQVNLX0ZJTFRFUl9DTE9TRUQQAhITCg9UQVNLX0ZJTFRFUl9BTEwQAzKpCAoOQ2hhbm5lbFNlcnZpY2USSAoJU3Vic2NyaWJlEhsuY29sbGFiLnYxLlN1YnNjcmliZVJlcXVlc3QaHC5jb2xsYWIudjEuU3Vic2NyaWJlUmVzcG9uc2UwARJDCghHZXRTdGF0ZRIaLmNvbGxhYi52MS5HZXRTdGF0ZVJlcXVlc3QaGy5jb2xsYWIudjEuR2V0U3RhdGVSZXNwb25zZRI3CgRTZW5kEhYuY29sbGFiLnYxLlNlbmRSZXF1ZXN0GhcuY29sbGFiLnYxLlNlbmRSZXNwb25zZRI0CgNBY2sSFS5jb2xsYWIudjEuQWNrUmVxdWVzdBoWLmNvbGxhYi52MS5BY2tSZXNwb25zZRI6CgVDbGFpbRIXLmNvbGxhYi52MS5DbGFpbVJlcXVlc3QaGC5jb2xsYWIudjEuQ2xhaW1SZXNwb25zZRJACgdSZWxlYXNlEhkuY29sbGFiLnYxLlJlbGVhc2VSZXF1ZXN0GhouY29sbGFiLnYxLlJlbGVhc2VSZXNwb25zZRJJCgpQdXRDb250ZXh0EhwuY29sbGFiLnYxLlB1dENvbnRleHRSZXF1ZXN0Gh0uY29sbGFiLnYxLlB1dENvbnRleHRSZXNwb25zZRJJCgpHZXRDb250ZXh0EhwuY29sbGFiLnYxLkdldENvbnRleHRSZXF1ZXN0Gh0uY29sbGFiLnYxLkdldENvbnRleHRSZXNwb25zZRJMCgtTZXRQcmVzZW5jZRIdLmNvbGxhYi52MS5TZXRQcmVzZW5jZVJlcXVlc3QaHi5jb2xsYWIudjEuU2V0UHJlc2VuY2VSZXNwb25zZRJACgdIaXN0b3J5EhkuY29sbGFiLnYxLkhpc3RvcnlSZXF1ZXN0GhouY29sbGFiLnYxLkhpc3RvcnlSZXNwb25zZRJGCglIZWFydGJlYXQSGy5jb2xsYWIudjEuSGVhcnRiZWF0UmVxdWVzdBocLmNvbGxhYi52MS5IZWFydGJlYXRSZXNwb25zZRJVCg5DcmVhdGVUYXNrTGlzdBIgLmNvbGxhYi52MS5DcmVhdGVUYXNrTGlzdFJlcXVlc3QaIS5jb2xsYWIudjEuQ3JlYXRlVGFza0xpc3RSZXNwb25zZRJDCghBZGRUYXNrcxIaLmNvbGxhYi52MS5BZGRUYXNrc1JlcXVlc3QaGy5jb2xsYWIudjEuQWRkVGFza3NSZXNwb25zZRJJCgpVcGRhdGVUYXNrEhwuY29sbGFiLnYxLlVwZGF0ZVRhc2tSZXF1ZXN0Gh0uY29sbGFiLnYxLlVwZGF0ZVRhc2tSZXNwb25zZRJGCglMaXN0VGFza3MSGy5jb2xsYWIudjEuTGlzdFRhc2tzUmVxdWVzdBocLmNvbGxhYi52MS5MaXN0VGFza3NSZXNwb25zZWIGcHJvdG8z", [file_collab_v1_model, file_google_protobuf_timestamp]);
 var SendRequestSchema = /* @__PURE__ */ messageDesc(file_collab_v1_channel, 7);
 var TaskFilter;
@@ -7987,17 +7987,17 @@ var TaskFilter;
 })(TaskFilter || (TaskFilter = {}));
 var ChannelService = /* @__PURE__ */ serviceDesc(file_collab_v1_channel, 0);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/membership_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/membership_pb.js
 var file_collab_v1_membership = /* @__PURE__ */ fileDesc("Chpjb2xsYWIvdjEvbWVtYmVyc2hpcC5wcm90bxIJY29sbGFiLnYxIjMKC0pvaW5SZXF1ZXN0Eg4KBmludml0ZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkifQoMSm9pblJlc3BvbnNlEhEKCW1lbWJlcl9pZBgBIAEoCRIOCgZzZWNyZXQYAiABKAkSDwoHY2hhbm5lbBgDIAEoCRIUCgxkaXNwbGF5X25hbWUYBCABKAkSDgoGaGFuZGxlGAUgASgJEhMKC3dzX2VuZHBvaW50GAYgASgJMkwKEU1lbWJlcnNoaXBTZXJ2aWNlEjcKBEpvaW4SFi5jb2xsYWIudjEuSm9pblJlcXVlc3QaFy5jb2xsYWIudjEuSm9pblJlc3BvbnNlYgZwcm90bzM");
 var MembershipService = /* @__PURE__ */ serviceDesc(file_collab_v1_membership, 0);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/websocket_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/websocket_pb.js
 var file_collab_v1_websocket = /* @__PURE__ */ fileDesc("Chljb2xsYWIvdjEvd2Vic29ja2V0LnByb3RvEgljb2xsYWIudjEiFAoSSXNzdWVUaWNrZXRSZXF1ZXN0ImoKE0lzc3VlVGlja2V0UmVzcG9uc2USDgoGdGlja2V0GAEgASgJEhMKC3dzX2VuZHBvaW50GAIgASgJEi4KCmV4cGlyZXNfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIqkFCgtDbGllbnRGcmFtZRISCgpyZXF1ZXN0X2lkGAEgASgJEjAKCXN1YnNjcmliZRgKIAEoCzIbLmNvbGxhYi52MS5TdWJzY3JpYmVSZXF1ZXN0SAASJgoEc2VuZBgLIAEoCzIWLmNvbGxhYi52MS5TZW5kUmVxdWVzdEgAEiQKA2FjaxgMIAEoCzIVLmNvbGxhYi52MS5BY2tSZXF1ZXN0SAASKAoFY2xhaW0YDSABKAsyFy5jb2xsYWIudjEuQ2xhaW1SZXF1ZXN0SAASLAoHcmVsZWFzZRgOIAEoCzIZLmNvbGxhYi52MS5SZWxlYXNlUmVxdWVzdEgAEjMKC3B1dF9jb250ZXh0GA8gASgLMhwuY29sbGFiLnYxLlB1dENvbnRleHRSZXF1ZXN0SAASMwoLZ2V0X2NvbnRleHQYECABKAsyHC5jb2xsYWIudjEuR2V0Q29udGV4dFJlcXVlc3RIABI1CgxzZXRfcHJlc2VuY2UYESABKAsyHS5jb2xsYWIudjEuU2V0UHJlc2VuY2VSZXF1ZXN0SAASLAoHaGlzdG9yeRgSIAEoCzIZLmNvbGxhYi52MS5IaXN0b3J5UmVxdWVzdEgAEjAKCWhlYXJ0YmVhdBgTIAEoCzIbLmNvbGxhYi52MS5IZWFydGJlYXRSZXF1ZXN0SAASPAoQY3JlYXRlX3Rhc2tfbGlzdBgUIAEoCzIgLmNvbGxhYi52MS5DcmVhdGVUYXNrTGlzdFJlcXVlc3RIABIvCglhZGRfdGFza3MYFSABKAsyGi5jb2xsYWIudjEuQWRkVGFza3NSZXF1ZXN0SAASMwoLdXBkYXRlX3Rhc2sYFiABKAsyHC5jb2xsYWIudjEuVXBkYXRlVGFza1JlcXVlc3RIAEIJCgdyZXF1ZXN0IrkCCgtTZXJ2ZXJGcmFtZRImCgVoZWxsbxgBIAEoCzIVLmNvbGxhYi52MS5IZWxsb0V2ZW50SAASJQoHbWVzc2FnZRgCIAEoCzISLmNvbGxhYi52MS5NZXNzYWdlSAASLAoIcHJlc2VuY2UYAyABKAsyGC5jb2xsYWIudjEuUHJlc2VuY2VFdmVudEgAEigKBmNsYWltcxgEIAEoCzIWLmNvbGxhYi52MS5DbGFpbXNFdmVudEgAEiwKB2NvbnRleHQYBSABKAsyGS5jb2xsYWIudjEuQ29udGV4dFN1bW1hcnlIABIjCgZyZXN1bHQYBiABKAsyES5jb2xsYWIudjEuUmVzdWx0SAASJwoFZXJyb3IYByABKAsyFi5jb2xsYWIudjEuRXJyb3JEZXRhaWxIAEIHCgVmcmFtZSL/BAoGUmVzdWx0EhIKCnJlcXVlc3RfaWQYASABKAkSJwoEc2VuZBgLIAEoCzIXLmNvbGxhYi52MS5TZW5kUmVzcG9uc2VIABIlCgNhY2sYDCABKAsyFi5jb2xsYWIudjEuQWNrUmVzcG9uc2VIABIpCgVjbGFpbRgNIAEoCzIYLmNvbGxhYi52MS5DbGFpbVJlc3BvbnNlSAASLQoHcmVsZWFzZRgOIAEoCzIaLmNvbGxhYi52MS5SZWxlYXNlUmVzcG9uc2VIABI0CgtwdXRfY29udGV4dBgPIAEoCzIdLmNvbGxhYi52MS5QdXRDb250ZXh0UmVzcG9uc2VIABI0CgtnZXRfY29udGV4dBgQIAEoCzIdLmNvbGxhYi52MS5HZXRDb250ZXh0UmVzcG9uc2VIABI2CgxzZXRfcHJlc2VuY2UYESABKAsyHi5jb2xsYWIudjEuU2V0UHJlc2VuY2VSZXNwb25zZUgAEi0KB2hpc3RvcnkYEiABKAsyGi5jb2xsYWIudjEuSGlzdG9yeVJlc3BvbnNlSAASMQoJaGVhcnRiZWF0GBMgASgLMhwuY29sbGFiLnYxLkhlYXJ0YmVhdFJlc3BvbnNlSAASPQoQY3JlYXRlX3Rhc2tfbGlzdBgUIAEoCzIhLmNvbGxhYi52MS5DcmVhdGVUYXNrTGlzdFJlc3BvbnNlSAASMAoJYWRkX3Rhc2tzGBUgASgLMhsuY29sbGFiLnYxLkFkZFRhc2tzUmVzcG9uc2VIABI0Cgt1cGRhdGVfdGFzaxgWIAEoCzIdLmNvbGxhYi52MS5VcGRhdGVUYXNrUmVzcG9uc2VIAEIKCghyZXNwb25zZTJgChBXZWJTb2NrZXRTZXJ2aWNlEkwKC0lzc3VlVGlja2V0Eh0uY29sbGFiLnYxLklzc3VlVGlja2V0UmVxdWVzdBoeLmNvbGxhYi52MS5Jc3N1ZVRpY2tldFJlc3BvbnNlYgZwcm90bzM", [file_collab_v1_channel, file_collab_v1_errors, file_collab_v1_model, file_google_protobuf_timestamp]);
 var ClientFrameSchema = /* @__PURE__ */ messageDesc(file_collab_v1_websocket, 2);
 var ServerFrameSchema = /* @__PURE__ */ messageDesc(file_collab_v1_websocket, 3);
 var WebSocketService = /* @__PURE__ */ serviceDesc(file_collab_v1_websocket, 0);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/names.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/names.js
 var MAX_NAME_CHARS = 64;
 function slug(value, max = MAX_NAME_CHARS) {
   if (typeof value !== "string")
@@ -8005,7 +8005,7 @@ function slug(value, max = MAX_NAME_CHARS) {
   return value.normalize("NFKD").replace(new RegExp("\\p{M}+", "gu"), "").toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^[._-]+/, "").slice(0, max).replace(/-+$/, "");
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/limits.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/limits.js
 var MESSAGE_TTL_SECONDS = 30 * 24 * 60 * 60;
 var CONTEXT_TTL_SECONDS = 180 * 24 * 60 * 60;
 var INVITE_TTL_SECONDS = 24 * 60 * 60;
@@ -9406,7 +9406,7 @@ function listValueFromJson(listValue, json, ctx) {
   }
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/version.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/version.js
 var PROTOCOL_MAJOR = 1;
 var PROTOCOL_MINOR = 0;
 var PROTOCOL = create(ProtocolVersionSchema, { major: PROTOCOL_MAJOR, minor: PROTOCOL_MINOR });
@@ -9414,7 +9414,7 @@ function formatVersion(version) {
   return `${version.major}.${version.minor}`;
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/json.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/json.js
 var READ = { ignoreUnknownFields: true };
 function encode(schema, message) {
   return toJsonString(schema, message);
@@ -9423,7 +9423,7 @@ function decode(schema, text) {
   return fromJsonString(schema, text, READ);
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/http.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/http.js
 function rpcPath(method) {
   return `/${method.parent.typeName}/${method.name}`;
 }
@@ -9804,6 +9804,23 @@ function applyTaskList(clientSessionId2, list) {
   const kept = list.open + list.inProgress > 0 ? [list, ...others] : others;
   writeLocalState(clientSessionId2, { taskLists: kept.sort((a, b) => b.updatedAt - a.updatedAt) });
 }
+var isOpen = (task) => task.status === "open" || task.status === "in_progress";
+function applyTasks(clientSessionId2, tasks, list) {
+  const state = readLocalState(clientSessionId2);
+  const read = tasks.filter((t) => (!state.topic || t.topic === state.topic) && isOpen(t));
+  const kept = list === void 0 ? [] : (state.tasks ?? []).filter((t) => t.list !== list);
+  writeLocalState(clientSessionId2, { tasks: [...kept, ...read], tasksStale: false });
+}
+function applyTask(clientSessionId2, task) {
+  const state = readLocalState(clientSessionId2);
+  if (state.topic && task.topic !== state.topic) return;
+  const tasks = state.tasks ?? [];
+  const same = (t) => t.list === task.list && t.number === task.number;
+  const known = tasks.find(same);
+  if (known && known.updatedAt > task.updatedAt) return;
+  const others = tasks.filter((t) => !same(t));
+  writeLocalState(clientSessionId2, { tasks: isOpen(task) ? [...others, task] : others });
+}
 function messagesSince(clientSessionId2, since, filter = {}) {
   const threshold = URGENCY_RANK[filter.minUrgency ?? "low"];
   const types = filter.types ?? [];
@@ -9818,7 +9835,7 @@ var BUSY_STALE_MS = 10 * 60 * 1e3;
 var CONFIRM_WINDOW_MS = 10 * 60 * 1e3;
 
 // src/lib/version.ts
-var PLUGIN_VERSION = "1.0.0-rc.5";
+var PLUGIN_VERSION = "1.0.0-rc.6";
 
 // src/lib/wire.ts
 function ms(ts) {
@@ -10156,6 +10173,8 @@ function handleServerFrame(frame, ctx) {
         claims: state.claims,
         contextIndex: state.contextIndex,
         taskLists: state.taskLists,
+        // The hello carries the lists' counts but not the tasks: the daemon reads them next.
+        tasksStale: true,
         latestSeq: state.latestSeq,
         lastError: void 0,
         fatal: void 0,
@@ -10281,6 +10300,7 @@ var MAX_LIFETIME_MS = 12 * 60 * 60 * 1e3;
 var RECONNECT_BASE_MS = 500;
 var RECONNECT_MAX_MS = 3e4;
 var MCP_GONE_MS = 3 * 60 * 1e3;
+var TASK_REFRESH_DEBOUNCE_MS = 300;
 var clientSessionId = process.env.COLLAB_CLIENT_SESSION_ID ?? "default";
 var claudePid = Number(process.env.COLLAB_CLAUDE_PID) || void 0;
 var sessionCwd = process.env.COLLAB_CWD || process.cwd();
@@ -10428,6 +10448,7 @@ var Daemon = class {
     if (helloApplied) {
       this.freshHello = false;
       this.subscribed = true;
+      void this.refreshTasks();
     }
   }
   /**
@@ -10437,6 +10458,7 @@ var Daemon = class {
   ingest(message, { quiet = false } = {}) {
     appendInbox(clientSessionId, message);
     for (const waiter of this.waiters) waiter();
+    if (message.task && !quiet) this.scheduleTaskRefresh();
     const worthAToast = !quiet && this.config.desktopNotifications && (message.type === "done" || message.urgency === "high");
     if (worthAToast) {
       notifyDesktop(
@@ -10665,6 +10687,37 @@ var Daemon = class {
     }
   }
   /* ── Task lists ───────────────────────────────────────────────────────── */
+  taskRefresh;
+  /** A burst of task notices, such as a list of five added at once, needs one read, not five. */
+  scheduleTaskRefresh() {
+    if (this.taskRefresh) return;
+    this.taskRefresh = setTimeout(() => {
+      this.taskRefresh = void 0;
+      void this.refreshTasks();
+    }, TASK_REFRESH_DEBOUNCE_MS);
+    this.taskRefresh.unref();
+  }
+  /**
+   * Reads the topic's open tasks into state.json, for what cannot go to the
+   * network itself: the session start and the statusline. A task notice says
+   * which task changed, not who has it now or how far along it is, hence a read.
+   */
+  async refreshTasks() {
+    try {
+      const response = await this.overHttp(() => listTasksViaHttp(this.creds, this.origin, {
+        topic: "",
+        list: "",
+        filter: TaskFilter.OPEN,
+        limit: 0
+      }));
+      writeLocalState(clientSessionId, { taskLists: response.lists.map(toTaskList).filter((l) => l.open + l.inProgress > 0) });
+      if (!response.truncated) applyTasks(clientSessionId, response.tasks.map(toTask));
+      else writeLocalState(clientSessionId, { tasksStale: false });
+    } catch (err) {
+      writeLocalState(clientSessionId, { tasksStale: false });
+      log("task read failed", err.message);
+    }
+  }
   /** A backend from before task lists answers them as an operation it does not know. */
   async tasks(run) {
     try {
@@ -10689,10 +10742,12 @@ var Daemon = class {
       limit: Math.max(0, Math.trunc(Number(params.get("limit") ?? 0)) || 0)
     }));
     const lists = response.lists.map(toTaskList);
-    if (filter === TaskFilter.OPEN && !list && (!topic || topic === this.origin.topic)) {
-      writeLocalState(clientSessionId, { taskLists: lists.filter((l) => l.open + l.inProgress > 0) });
+    const tasks = response.tasks.map(toTask);
+    if (filter === TaskFilter.OPEN && (!topic || topic === this.origin.topic)) {
+      if (!list) writeLocalState(clientSessionId, { taskLists: lists.filter((l) => l.open + l.inProgress > 0) });
+      if (!response.truncated) applyTasks(clientSessionId, tasks, list || void 0);
     }
-    return { lists, tasks: response.tasks.map(toTask), truncated: response.truncated };
+    return { lists, tasks, truncated: response.truncated };
   }
   /** Creates the list if the topic has none by that key, then adds to it. */
   async addTasks(body) {
@@ -10705,7 +10760,9 @@ var Daemon = class {
     if (added.case !== "addTasks" || !added.value.list) throw new Error("unexpected answer to adding tasks");
     const list = toTaskList(added.value.list);
     applyTaskList(clientSessionId, list);
-    return { created: created.value.created, list, tasks: added.value.tasks.map(toTask) };
+    const addedTasks = added.value.tasks.map(toTask);
+    for (const task of addedTasks) applyTask(clientSessionId, task);
+    return { created: created.value.created, list, tasks: addedTasks };
   }
   async updateTask(body) {
     const note = typeof body.note === "string" ? body.note : "";
@@ -10732,8 +10789,10 @@ var Daemon = class {
     });
     if (response.case !== "updateTask" || !response.value.task || !response.value.list) throw new Error("unexpected answer to a task update");
     const list = toTaskList(response.value.list);
+    const task = toTask(response.value.task);
     applyTaskList(clientSessionId, list);
-    return { task: toTask(response.value.task), list };
+    applyTask(clientSessionId, task);
+    return { task, list };
   }
   /** Prefers the socket, falls back to plain HTTP so a send never just fails. */
   async send(message) {
