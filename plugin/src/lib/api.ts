@@ -3,7 +3,7 @@ import {
   ChannelService, create, decode, encode, ErrorCode, ErrorDetailSchema, formatVersion, HEADER_CLIENT_SESSION,
   HEADER_MEMBER_ID, HEADER_MEMBER_SECRET, HEADER_PROTOCOL, HEADER_TOPIC, MembershipService, PROTOCOL, rpcPath,
   WebSocketService, type ChannelState, type ClientFrame, type IssueTicketResponse, type JoinResponse,
-  type MessageInitShape, type MessageShape, type Result, type SendRequest, type SendResponse,
+  type ListTasksResponse, type MessageInitShape, type MessageShape, type Result, type SendRequest, type SendResponse,
 } from '@collab/protocol';
 import type { Credentials } from './config.js';
 
@@ -123,5 +123,17 @@ export async function channelViaHttp(
     case 'setPresence': return { case: 'setPresence', value: await call(endpoint, m.setPresence, request.value, headers) };
     case 'history': return { case: 'history', value: await call(endpoint, m.history, request.value, headers) };
     case 'heartbeat': return { case: 'heartbeat', value: await call(endpoint, m.heartbeat, request.value, headers) };
+    case 'createTaskList': return { case: 'createTaskList', value: await call(endpoint, m.createTaskList, request.value, headers) };
+    case 'addTasks': return { case: 'addTasks', value: await call(endpoint, m.addTasks, request.value, headers) };
+    case 'updateTask': return { case: 'updateTask', value: await call(endpoint, m.updateTask, request.value, headers) };
   }
+}
+
+/** HTTP only, like GetState: a whole list can outgrow a WebSocket message. */
+export function listTasksViaHttp(
+  creds: Credentials,
+  origin: Origin,
+  request: MessageInitShape<typeof ChannelService.method.listTasks.input>,
+): Promise<ListTasksResponse> {
+  return call(creds.apiEndpoint, ChannelService.method.listTasks, request, memberHeaders(creds, origin));
 }

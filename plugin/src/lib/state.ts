@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { URGENCY_RANK, type Claim, type ContextSummary, type Member, type Message, type Urgency } from './model.js';
+import {
+  URGENCY_RANK, type Claim, type ContextSummary, type Member, type Message, type TaskList, type Urgency,
+} from './model.js';
 import { dataDir, sessionDir, sessionsRoot } from './config.js';
 
 /**
@@ -72,6 +74,8 @@ export interface LocalState {
   members: Member[];
   claims: Claim[];
   contextIndex: ContextSummary[];
+  /** The topic's task lists with open tasks, most recently changed first. */
+  taskLists: TaskList[];
   latestSeq: number;
   updatedAt: number;
   lastError?: string;
@@ -84,7 +88,7 @@ export interface LocalState {
 
 const EMPTY_STATE: LocalState = {
   connected: false, channel: '', self: '', handle: '', topic: '', members: [], claims: [],
-  contextIndex: [], latestSeq: 0, updatedAt: 0,
+  contextIndex: [], taskLists: [], latestSeq: 0, updatedAt: 0,
 };
 
 const EMPTY_CURSOR: Cursor = { delivered: 0, acked: 0, lastBlockAt: 0 };
@@ -308,6 +312,22 @@ export function writeLocalState(clientSessionId: string, patch: Partial<LocalSta
   const next = { ...readLocalState(clientSessionId), ...patch, updatedAt: Date.now() };
   writeJsonAtomic(file(clientSessionId, 'state.json'), next);
   return next;
+}
+
+/**
+ * Keeps the topic's task lists current from a list as some change left it: a
+ * task notice, or the answer to this session's own change (it gets no notice
+ * of its own). A list of another topic changes nothing here, and one with no
+ * open tasks left drops out, as it does from the server's state.
+ */
+export function applyTaskList(clientSessionId: string, list: TaskList): void {
+  const state = readLocalState(clientSessionId);
+  if (state.topic && list.topic !== state.topic) return;
+  const known = state.taskLists.find((l) => l.key === list.key);
+  if (known && known.updatedAt > list.updatedAt) return;
+  const others = state.taskLists.filter((l) => l.key !== list.key);
+  const kept = list.open + list.inProgress > 0 ? [list, ...others] : others;
+  writeLocalState(clientSessionId, { taskLists: kept.sort((a, b) => b.updatedAt - a.updatedAt) });
 }
 
 /* ── Derived views ──────────────────────────────────────────────────────── */

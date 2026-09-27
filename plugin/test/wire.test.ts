@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import frames from '@collab/protocol/vectors/frames.json';
 import { decodeServerFrame, encodeFrame, clientFrame } from '../src/lib/frames.js';
-import { toMember, toMessage, toSendRequest } from '../src/lib/wire.js';
+import { toMember, toMessage, toSendRequest, toTask, toTaskList } from '../src/lib/wire.js';
 
 /** A ServerFrame from the protocol vectors, decoded the way the daemon decodes one off the socket. */
 function vectorFrame(name: string) {
@@ -89,5 +89,70 @@ describe('what the server sends, in the plugin\'s own shapes', () => {
     const message = toMessage(frame.value);
     expect(message.fromClientSessionId).toBeUndefined();
     expect(message.to).toEqual({ memberId: '01K6D2R1B7C4M9P2X5Q8T3V6WA', handle: 'carlos' });
+  });
+});
+
+describe('task lists, on the wire', () => {
+  it('a task notice carries its list, the tasks and what happened', () => {
+    const frame = vectorFrame('the task notice the server writes, for the actor\'s other sessions too');
+    if (frame.case !== 'message') throw new Error('not a message');
+    expect(toMessage(frame.value)).toMatchObject({
+      type: 'task',
+      urgency: 'normal',
+      task: {
+        event: 'done',
+        numbers: [1],
+        list: { key: 'rc5', topic: 'collab-global', title: 'rc.5: seguimiento', open: 1, inProgress: 0, done: 1, dismissed: 0 },
+      },
+    });
+  });
+
+  it('a finished task keeps who did it and what they said', () => {
+    const frame = vectorFrame('the answer to finishing a task');
+    if (frame.case !== 'result' || frame.value.response.case !== 'updateTask') throw new Error('not an updateTask result');
+    expect(toTask(frame.value.response.value.task!)).toEqual({
+      list: 'rc5',
+      topic: 'collab-global',
+      number: 1,
+      title: 'Probar el watchdog en vivo',
+      status: 'done',
+      createdByMemberId: '01K6D2R1B7C4M9P2X5Q8T3V6WA',
+      createdByName: 'Carlos',
+      createdAt: Date.parse('2026-09-27T20:00:00Z'),
+      holder: {
+        memberId: '01K6D2Q7ZJ9XH3V5W8N4T2R6YB', handle: 'willy', name: 'Willy',
+        clientSessionId: '3f2a91c0-5b1e-4c0a-9d7e-2f6a1b3c4d5e', since: Date.parse('2026-09-27T20:05:00Z'),
+      },
+      lastProgress: { text: 'bg-spare verificado', percent: 60, authorName: 'Willy', at: Date.parse('2026-09-27T20:30:00Z') },
+      progressCount: 1,
+      closedByName: 'Willy',
+      closedAt: Date.parse('2026-09-27T21:00:00Z'),
+      resolution: 'El watchdog cierra el daemon en 3 minutos',
+      updatedAt: Date.parse('2026-09-27T21:00:00Z'),
+    });
+  });
+
+  it('an open task has no holder, progress or closing', () => {
+    const frame = vectorFrame('the answer to adding tasks');
+    if (frame.case !== 'result' || frame.value.response.case !== 'addTasks') throw new Error('not an addTasks result');
+    const task = toTask(frame.value.response.value.tasks[0]!);
+    expect(task).toMatchObject({ number: 1, status: 'open', refs: ['plugin/src/daemon.ts'], progressCount: 0 });
+    expect(task.holder).toBeUndefined();
+    expect(task.lastProgress).toBeUndefined();
+    expect(task.closedAt).toBeUndefined();
+    expect(toTaskList(frame.value.response.value.list!)).toMatchObject({ key: 'rc5', open: 1, inProgress: 0 });
+  });
+
+  it('the requests the daemon builds are the canonical frames', () => {
+    const checkout = frames.cases.find((c) => c.name === 'check out a task')!.json;
+    expect(JSON.parse(encodeFrame(clientFrame({
+      case: 'updateTask', value: { list: 'rc5', number: 1, change: { case: 'checkout', value: {} } },
+    }, 'r12')))).toEqual(checkout);
+
+    const progress = frames.cases.find((c) => c.name === 'report progress on a task in a named topic')!.json;
+    expect(JSON.parse(encodeFrame(clientFrame({
+      case: 'updateTask',
+      value: { topic: 'collab-global', list: 'rc5', number: 1, change: { case: 'progress', value: { text: 'bg-spare verificado', percent: 60 } } },
+    }, 'r13')))).toEqual(progress);
   });
 });

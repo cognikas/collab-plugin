@@ -12,9 +12,11 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import WebSocket from 'ws';
-import { HEARTBEAT_SECONDS, MemberStatus, type Result } from '@collab/protocol';
 import {
-  ackViaHttp, ApiError, channelViaHttp, fetchState, issueTicket, join, sendViaHttp, type Origin,
+  HEARTBEAT_SECONDS, MemberStatus, TaskFilter, type MessageInitShape, type Result, type UpdateTaskRequestSchema,
+} from '@collab/protocol';
+import {
+  ackViaHttp, ApiError, channelViaHttp, fetchState, issueTicket, join, listTasksViaHttp, sendViaHttp, type Origin,
 } from './lib/api.js';
 import {
   dataDir, gitBranch, readConfig, resolveCredentials, resolveTopic, sessionDir, writeCredentials,
@@ -24,14 +26,16 @@ import {
   clientFrame, decodeServerFrame, encodeFrame, fatalReason, handleServerFrame, subscribeFrame,
   WS_FRAME_LIMIT_BYTES, type RequestInit,
 } from './lib/frames.js';
-import { URGENCY_RANK, type Message, type OutgoingMessage, type Urgency } from './lib/model.js';
+import { URGENCY_RANK, type Message, type OutgoingMessage, type Task, type TaskList, type Urgency } from './lib/model.js';
 import { notifyDesktop } from './lib/notify.js';
 import { becameSpare, readCommandLine } from './lib/process.js';
 import {
-  appendInbox, clearDaemonInfo, isAlive, liveMcpServers, messagesSince, readCursor, readInbox, readLocalState,
+  appendInbox, applyTaskList, clearDaemonInfo, isAlive, liveMcpServers, messagesSince, readCursor, readInbox, readLocalState,
   truncateInbox, writeCursor, writeDaemonInfo, writeLocalState,
 } from './lib/state.js';
-import { toClaim, toContextEntry, toSendRequest, toSendResult, toSnapshot } from './lib/wire.js';
+import { toClaim, toContextEntry, toSendRequest, toSendResult, toSnapshot, toTask, toTaskList } from './lib/wire.js';
+
+type UpdateTaskChange = MessageInitShape<typeof UpdateTaskRequestSchema>['change'];
 
 const MAX_LIFETIME_MS = 12 * 60 * 60 * 1000;
 const RECONNECT_BASE_MS = 500;
@@ -437,6 +441,15 @@ class Daemon {
         return respond(res, 200, toContextEntry(response.value.entry));
       }
 
+      case 'GET /tasks':
+        return respond(res, 200, await this.tasks(() => this.listTasks(url.searchParams)));
+
+      case 'POST /tasks/add':
+        return respond(res, 200, await this.tasks(() => this.addTasks(body)));
+
+      case 'POST /tasks/update':
+        return respond(res, 200, await this.tasks(() => this.updateTask(body)));
+
       case 'POST /presence':
         this.sendFrame({
           case: 'setPresence',
@@ -456,6 +469,80 @@ class Daemon {
       default:
         return respond(res, 404, { error: 'unknown endpoint' });
     }
+  }
+
+  /* ── Task lists ───────────────────────────────────────────────────────── */
+
+  /** A backend from before task lists answers them as an operation it does not know. */
+  private async tasks<T>(run: () => Promise<T>): Promise<T> {
+    try {
+      return await run();
+    } catch (err) {
+      const message = (err as Error).message;
+      if (/names no operation|No method at/.test(message)) {
+        throw new Error('the channel backend does not have task lists yet (they need collab-backend 1.0.0-rc.3 or later)');
+      }
+      throw err;
+    }
+  }
+
+  private async listTasks(params: URLSearchParams): Promise<{ lists: TaskList[]; tasks: Task[]; truncated: boolean }> {
+    const show = params.get('show');
+    const filter = show === 'closed' ? TaskFilter.CLOSED : show === 'all' ? TaskFilter.ALL : TaskFilter.OPEN;
+    const topic = params.get('topic') ?? '';
+    const list = params.get('list') ?? '';
+    const response = await this.overHttp(() => listTasksViaHttp(this.creds, this.origin, {
+      topic, list, filter, limit: Math.max(0, Math.trunc(Number(params.get('limit') ?? 0)) || 0),
+    }));
+    const lists = response.lists.map(toTaskList);
+    // A fresh read of this topic's open lists is the best summary there is.
+    if (filter === TaskFilter.OPEN && !list && (!topic || topic === this.origin.topic)) {
+      writeLocalState(clientSessionId, { taskLists: lists.filter((l) => l.open + l.inProgress > 0) });
+    }
+    return { lists, tasks: response.tasks.map(toTask), truncated: response.truncated };
+  }
+
+  /** Creates the list if the topic has none by that key, then adds to it. */
+  private async addTasks(body: Record<string, unknown>): Promise<{ created: boolean; list: TaskList; tasks: Task[] }> {
+    const key = String(body.list ?? '');
+    const created = await this.request({ case: 'createTaskList', value: { key, title: String(body.listTitle ?? '') } });
+    if (created.case !== 'createTaskList' || !created.value.list) throw new Error('unexpected answer to creating a task list');
+
+    const given = Array.isArray(body.tasks) ? body.tasks : [];
+    const tasks = given.map((t) => (typeof t === 'string'
+      ? { title: t, refs: [] }
+      : { title: String((t as { title?: unknown }).title ?? ''), refs: toStrings((t as { refs?: unknown }).refs) }));
+    const added = await this.request({ case: 'addTasks', value: { list: created.value.list.key, tasks } });
+    if (added.case !== 'addTasks' || !added.value.list) throw new Error('unexpected answer to adding tasks');
+
+    const list = toTaskList(added.value.list);
+    applyTaskList(clientSessionId, list);
+    return { created: created.value.created, list, tasks: added.value.tasks.map(toTask) };
+  }
+
+  private async updateTask(body: Record<string, unknown>): Promise<{ task: Task; list: TaskList }> {
+    const note = typeof body.note === 'string' ? body.note : '';
+    const percent = typeof body.percent === 'number' ? Math.max(0, Math.round(body.percent)) : undefined;
+    const change = ((): UpdateTaskChange => {
+      switch (body.action) {
+        case 'checkout': return { case: 'checkout', value: { takeover: body.takeover === true } };
+        case 'progress': return { case: 'progress', value: { text: note, ...(percent === undefined ? {} : { percent }) } };
+        case 'release': return { case: 'release', value: { note } };
+        case 'done': return { case: 'finish', value: { summary: note } };
+        case 'dismiss': return { case: 'dismiss', value: { reason: note } };
+        default: throw new Error('action must be checkout, progress, release, done or dismiss');
+      }
+    })();
+    const response = await this.request({
+      case: 'updateTask',
+      value: { topic: String(body.topic ?? ''), list: String(body.list ?? ''), number: Math.max(0, Math.trunc(Number(body.number)) || 0), change },
+    });
+    if (response.case !== 'updateTask' || !response.value.task || !response.value.list) throw new Error('unexpected answer to a task update');
+
+    const list = toTaskList(response.value.list);
+    // This session gets no notice of its own change, so its summary moves here.
+    applyTaskList(clientSessionId, list);
+    return { task: toTask(response.value.task), list };
   }
 
   /** Prefers the socket, falls back to plain HTTP so a send never just fails. */
@@ -527,6 +614,10 @@ function replayFrom(): number | undefined {
  */
 function sessionTopic(config: PluginConfig): string {
   return resolveTopic(config, sessionCwd, undefined, readLocalState(clientSessionId).topic);
+}
+
+function toStrings(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(String) : [];
 }
 
 function respond(res: http.ServerResponse, status: number, body: unknown): void {
@@ -607,7 +698,7 @@ async function main(): Promise<void> {
       const state = toSnapshot(wire);
       writeLocalState(clientSessionId, {
         channel: state.channel, self: state.self, handle: state.handle, members: state.members,
-        claims: state.claims, contextIndex: state.contextIndex, latestSeq: state.latestSeq,
+        claims: state.claims, contextIndex: state.contextIndex, taskLists: state.taskLists, latestSeq: state.latestSeq,
       });
     })
     .catch((err: Error) => log('initial state fetch failed', err.message));

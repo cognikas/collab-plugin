@@ -126,6 +126,7 @@ const expected = [
   'collab_status', 'collab_inbox', 'collab_send', 'collab_done', 'collab_wait',
   'collab_context_put', 'collab_context_get', 'collab_context_list',
   'collab_claim', 'collab_claims', 'collab_release',
+  'collab_tasks', 'collab_task_add', 'collab_task_update',
 ];
 console.log('');
 check('all tools registered', expected.every((name) => tools.some((t) => t.name === name)),
@@ -202,6 +203,34 @@ if (claimId) {
 } else {
   check('collab_release works', false, 'could not parse the claim id');
 }
+
+const listKey = `mcp-check-${Date.now().toString(36)}`;
+const added = await call('collab_task_add', {
+  list: listKey, listTitle: 'mcp-check', tasks: [{ title: 'first task', refs: ['src/a.ts'] }, { title: 'second task' }],
+});
+check('collab_task_add creates the list and numbers the tasks',
+  !added.isError && /Created the list/.test(added.content?.[0]?.text ?? '') && /#1 first task; #2 second task/.test(added.content?.[0]?.text ?? ''),
+  added.content?.[0]?.text);
+const openTasks = await call('collab_tasks', { list: listKey });
+check('collab_tasks shows them open', !openTasks.isError && /#1 \[open\] first task/.test(openTasks.content?.[0]?.text ?? ''),
+  openTasks.content?.[0]?.text);
+const taken = await call('collab_task_update', { list: listKey, number: 1, action: 'checkout' });
+check('collab_task_update checks a task out', !taken.isError && /checked out to you/.test(taken.content?.[0]?.text ?? ''), taken.content?.[0]?.text);
+const progressed = await call('collab_task_update', { list: listKey, number: 1, action: 'progress', note: 'halfway', percent: 50 });
+check('collab_task_update reports progress', !progressed.isError, progressed.content?.[0]?.text);
+const noReason = await call('collab_task_update', { list: listKey, number: 2, action: 'dismiss' });
+check('dismissing without a reason is refused', noReason.isError === true && /INVALID_TASK/.test(noReason.content?.[0]?.text ?? ''),
+  noReason.content?.[0]?.text);
+const finished = await call('collab_task_update', { list: listKey, number: 1, action: 'done', note: 'checked by mcp-check' });
+check('collab_task_update finishes it', !finished.isError && /is done/.test(finished.content?.[0]?.text ?? ''), finished.content?.[0]?.text);
+const dismissed = await call('collab_task_update', { list: listKey, number: 2, action: 'dismiss', note: 'not needed' });
+check('collab_task_update dismisses one, with a reason', !dismissed.isError, dismissed.content?.[0]?.text);
+const closedTasks = await call('collab_tasks', { list: listKey, show: 'closed' });
+check('collab_tasks show:"closed" lists both, with what was said',
+  !closedTasks.isError && /checked by mcp-check/.test(closedTasks.content?.[0]?.text ?? '') && /not needed/.test(closedTasks.content?.[0]?.text ?? ''),
+  closedTasks.content?.[0]?.text);
+const stillOpen = await call('collab_tasks', { list: listKey });
+check('and no longer among the open ones', !stillOpen.isError && !/#1 \[/.test(stillOpen.content?.[0]?.text ?? ''), stillOpen.content?.[0]?.text);
 
 const inbox = await call('collab_inbox', { markRead: false });
 check('collab_inbox responds', !inbox.isError, inbox.content?.[0]?.text);

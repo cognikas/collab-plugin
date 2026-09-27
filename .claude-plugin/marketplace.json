@@ -11,7 +11,7 @@
       "source": "./plugin",
       "description": "Live channel between interactive Claude Code sessions, organized by topic: messages to a topic or a person, presence, shared context, file claims and finished-work notifications. Speaks protocol collab.v1.",
       "displayName": "Collaboration Channel",
-      "version": "1.0.0-rc.4",
+      "version": "1.0.0-rc.5",
       "author": {
         "name": "Cognikas"
       },

@@ -1,7 +1,7 @@
 import { createRequire as __createRequire } from 'node:module';
 const require = __createRequire(import.meta.url);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/names.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/names.js
 var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 function isClientSessionId(value) {
   return typeof value === "string" && CLIENT_SESSION_ID.test(value);
@@ -117,6 +117,7 @@ var EMPTY_STATE = {
   members: [],
   claims: [],
   contextIndex: [],
+  taskLists: [],
   latestSeq: 0,
   updatedAt: 0
 };
@@ -347,6 +348,12 @@ function claimConflictReason(claim) {
   const note = claim.note ? ` (${flattenForContext(claim.note)})` : "";
   return `${flattenForContext(claim.ownerName)} claimed ${claim.paths.map(flattenForContext).join(", ")}${note} and this edit falls inside it. Coordinate on the channel before overwriting their work.`;
 }
+function renderTaskListsLine(lists) {
+  return lists.map((list) => {
+    const counts = [[list.open, "open"], [list.inProgress, "in progress"]].filter(([n]) => n > 0).map(([n, what]) => `${n} ${what}`);
+    return `${flattenForContext(list.key)} \u2014 ${counts.join(", ")}`;
+  }).join(" \xB7 ");
+}
 
 // src/lib/channel.ts
 var PLUGIN_NAME = "collab-channel";
@@ -489,6 +496,10 @@ function renderChannelSummary(clientSessionId, mode) {
   if (state.contextIndex.length > 0) {
     lines.push(`Shared context in this topic (${state.contextIndex.length}): ${state.contextIndex.slice(0, 8).map((e) => `${e.key} v${e.version}`).join(" \xB7 ")}`);
     lines.push("Read any of it with the collab_context_get tool before re-deriving it yourself.");
+  }
+  const taskLists = state.taskLists ?? [];
+  if (taskLists.length > 0) {
+    lines.push(`Task lists in this topic with open tasks: ${renderTaskListsLine(taskLists.slice(0, 8))}. collab_tasks shows them; check out a task with collab_task_update before starting on it.`);
   }
   const messages = mode === "unread" ? unreadMessages(clientSessionId) : recentMessages(clientSessionId, 10);
   if (messages.length > 0) {

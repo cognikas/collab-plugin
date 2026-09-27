@@ -9,7 +9,8 @@ import { isChannelPrompt } from './lib/channel.js';
 import { gitBranch, readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
 import { callDaemon, daemonsToRetire, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
 import {
-  claimConflictReason, liveSessions, renderClaim, renderMemberLines, renderMessage, renderSession, UNTRUSTED_NOTE,
+  claimConflictReason, liveSessions, renderClaim, renderMemberLines, renderMessage, renderSession, renderTaskListsLine,
+  UNTRUSTED_NOTE,
 } from './lib/render.js';
 import {
   flattenForContext, interruptionBatch, listDaemons, pathMatchesClaim, readChannelStatus, readCursor, readLocalState,
@@ -96,6 +97,12 @@ function renderChannelSummary(
       .map((e) => `${e.key} v${e.version}`)
       .join(' · ')}`);
     lines.push('Read any of it with the collab_context_get tool before re-deriving it yourself.');
+  }
+
+  const taskLists = state.taskLists ?? [];
+  if (taskLists.length > 0) {
+    lines.push(`Task lists in this topic with open tasks: ${renderTaskListsLine(taskLists.slice(0, 8))}. `
+      + 'collab_tasks shows them; check out a task with collab_task_update before starting on it.');
   }
 
   const messages = mode === 'unread' ? unreadMessages(clientSessionId) : recentMessages(clientSessionId, 10);

@@ -107,6 +107,10 @@ files and `pnpm install`.
   (`daemonsToRetire`), and the watchdog exits when the process became a spare or has had no MCP
   server of ours for 3 minutes (`v1/mcp/`). `clearDaemonInfo` only removes the caller's own
   registration.
+- **Task lists** are read with `ListTasks` over HTTP only, and written like any request. `state.json`
+  keeps only the topic's lists with open tasks, from hello, from TASK notices (their payload carries
+  the list's counts) and from this session's own results, since a session gets no notice of its own
+  change (`applyTaskList`, which never rolls a list back).
 - **Compaction** runs SessionStart again with `source: "compact"`, which is where the channel summary
   goes back in. PostCompact output cannot carry context, so it is not registered.
 - `flattenForContext` in `src/lib/state.ts` and the tests hold escape sequences for invisible

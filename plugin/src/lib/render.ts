@@ -1,5 +1,5 @@
 import { isClientSessionId } from '@collab/protocol';
-import type { Claim, Member, MemberSession, Message } from './model.js';
+import type { Claim, Member, MemberSession, Message, Task, TaskList } from './model.js';
 import { flattenForContext } from './state.js';
 
 /**
@@ -136,6 +136,58 @@ export function claimConflictReason(claim: Claim): string {
   const note = claim.note ? ` (${flattenForContext(claim.note)})` : '';
   return `${flattenForContext(claim.ownerName)} claimed ${claim.paths.map(flattenForContext).join(', ')}${note} `
     + 'and this edit falls inside it. Coordinate on the channel before overwriting their work.';
+}
+
+/**
+ * A list's counts, as `3 open, 1 in progress, 2 done`: only the ones that are
+ * not zero. The key and title are chosen by whoever created it, so flattened.
+ */
+export function renderTaskList(list: TaskList): string {
+  const counts = [
+    [list.open, 'open'], [list.inProgress, 'in progress'], [list.done, 'done'], [list.dismissed, 'dismissed'],
+  ].filter(([n]) => (n as number) > 0).map(([n, what]) => `${n} ${what}`);
+  const title = list.title && list.title !== list.key ? ` "${flattenForContext(list.title)}"` : '';
+  return `${flattenForContext(list.key)}${title} — ${counts.length ? counts.join(', ') : 'no tasks yet'}`;
+}
+
+/** The lists of a topic on one line: `rc5 — 3 open, 1 in progress · beta — 2 open`. */
+export function renderTaskListsLine(lists: TaskList[]): string {
+  return lists.map((list) => {
+    const counts = [[list.open, 'open'], [list.inProgress, 'in progress']]
+      .filter(([n]) => (n as number) > 0).map(([n, what]) => `${n} ${what}`);
+    return `${flattenForContext(list.key)} — ${counts.join(', ')}`;
+  }).join(' · ');
+}
+
+/**
+ * One task on one line: `rc5#3 [in progress — willy, 40%, 2h ago] Fix ghost
+ * daemons — "last note"`. Its title, notes and refs were written by other
+ * developers, so every one of them is flattened.
+ */
+export function renderTask(task: Task, self = ''): string {
+  const name = (memberId: string | undefined, handle: string | undefined) =>
+    (memberId && memberId === self ? 'you' : flattenForContext(handle || 'someone'));
+  let state: string;
+  let detail = '';
+  switch (task.status) {
+    case 'in_progress': {
+      const percent = task.lastProgress?.percent;
+      const when = ago(task.lastProgress?.at ?? task.holder?.since ?? task.updatedAt);
+      state = `in progress — ${name(task.holder?.memberId, task.holder?.handle || task.holder?.name)}`
+        + `${percent === undefined ? '' : `, ${percent}%`}, ${when}`;
+      if (task.lastProgress) detail = ` — "${flattenForContext(task.lastProgress.text)}"`;
+      break;
+    }
+    case 'done':
+    case 'dismissed':
+      state = `${task.status} by ${flattenForContext(task.closedByName || 'someone')}, ${ago(task.closedAt ?? task.updatedAt)}`;
+      if (task.resolution) detail = ` — ${flattenForContext(task.resolution)}`;
+      break;
+    default:
+      state = 'open';
+  }
+  const refs = task.refs?.length ? ` (refs: ${task.refs.map(flattenForContext).join(', ')})` : '';
+  return `${flattenForContext(task.list)}#${task.number} [${state}] ${flattenForContext(task.title)}${detail}${refs}`;
 }
 
 /** Keeps only letters for a tag attribute value; the server validates these, but they end up in markup. */

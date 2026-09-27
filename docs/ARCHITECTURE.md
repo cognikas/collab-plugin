@@ -57,7 +57,7 @@ Uno por sesión de Claude Code. Lo arranca el hook `SessionStart`, en modo *deta
 | `daemon.json` | pid, puerto de loopback, token, cwd, pid del proceso de Claude Code |
 | `inbox.jsonl` | mensajes recibidos, append-only, en el modelo del plugin |
 | `cursor.json` | hasta dónde ha leído esta sesión |
-| `state.json` | tema y handle, presencia, reservas e índice de contexto del tema, último error |
+| `state.json` | tema y handle, presencia, reservas, índice de contexto y listas de tareas con tareas abiertas del tema, último error |
 | `turn.json` | solo en modo `channel`: si hay un turno en curso, y cuándo hubo actividad |
 | `channel.json` | solo en modo `channel`: si el push está activo y, si no, por qué |
 | `daemon.log` | diagnóstico |
@@ -147,7 +147,8 @@ por HTTP, el daemon deja de reconectar, apunta el motivo en `state.json` (`fatal
 los hooks y `/collab-status` lo muestran. Un daemon nuevo (sesión nueva, plugin actualizado) vuelve a
 intentarlo.
 
-**Socket o HTTP.** Toda operación unaria existe en los dos bindings. El daemon usa el socket cuando
+**Socket o HTTP.** Toda operación unaria existe en los dos bindings, salvo `GetState` y `ListTasks`,
+que solo van por HTTP. El daemon usa el socket cuando
 está suscrito y el frame cabe; si no, HTTP. Un frame de más de ~120 KB (un contexto grande) va por
 HTTP directamente, porque API Gateway rechaza mensajes de WebSocket de más de 128 KB. Una respuesta
 del servidor, sea resultado o error, es definitiva; solo se repite por HTTP lo que el socket no pudo
@@ -155,6 +156,25 @@ llevar (cerrado, o sin respuesta en 10 s).
 
 Las credenciales se usan solo contra el `api_endpoint` que las emitió: si cambia, el plugin pide una
 invitación nueva en vez de presentar una credencial que el otro backend no conoce.
+
+### Listas de tareas
+
+Las herramientas `collab_tasks`, `collab_task_add` y `collab_task_update` hablan con el daemon por
+`GET /tasks`, `POST /tasks/add` y `POST /tasks/update`.
+
+- **Escrituras.** `CreateTaskList`, `AddTasks` y `UpdateTask` van por el socket, como cualquier
+  petición; `collab_task_add` crea la lista antes de agregar (crearla es idempotente).
+- **Lecturas.** `ListTasks` va siempre por HTTP.
+- **Resumen.** `state.json` guarda las listas del tema que tienen tareas abiertas. Sale del `hello`,
+  de cada aviso `TASK` (su payload trae la lista con los contadores después del cambio) y de la
+  respuesta a los cambios de esta misma sesión, que no recibe su propio aviso. Un aviso que llega
+  tarde no hace retroceder una lista (`applyTaskList`). Ese resumen es lo que muestran el
+  `SessionStart` y `collab_status`; las tareas en sí se piden con `collab_tasks`.
+- **Avisos.** Son mensajes corrientes del inbox, de tipo `task`. Los cierres llegan en `normal`, así
+  que interrumpen en el siguiente `Stop`; el resto llega en `low` y se muestra junto con la próxima
+  entrega. Llegan también a las otras sesiones de quien actuó en el tema.
+- **Backend viejo.** Uno anterior a las listas contesta que no conoce la operación, y el daemon lo
+  traduce a «el backend todavía no tiene listas de tareas».
 
 ### Cómo el servidor MCP encuentra su daemon
 

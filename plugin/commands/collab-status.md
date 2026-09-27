@@ -10,6 +10,7 @@ Call `collab_status` and report the result to me compactly:
 - who else is online, and in which topics; for someone with several sessions, how many and where
   each one is
 - active claims in this topic, and whether any overlap what we are currently working on
+- task lists with open tasks in this topic, if any
 - how many messages are unread
 
 If there are unread messages, also call `collab_inbox` and summarize them. Point out anything that
