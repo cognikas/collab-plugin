@@ -1,4 +1,4 @@
-import { isClientSessionId } from '@collab/protocol';
+import { isClientSessionId, slug } from '@collab/protocol';
 import type { Claim, Member, MemberSession, Message, Task, TaskList } from './model.js';
 import { flattenForContext } from './state.js';
 
@@ -168,6 +168,32 @@ export function renderBacklog(backlog: Backlog, self: string, ownSession = ''): 
     lines.push(`${backlog.remaining} more unread after #${backlog.throughSeq}, not shown yet: collab_inbox shows them.`);
   }
   return lines;
+}
+
+/**
+ * Where a sent message went, for its sender: `→ carlos in collab-global:
+ * session <id>`. The sessions come from presence (see `reachedSessions`), and
+ * names and topics from other members, so they are flattened.
+ */
+export function renderReach(
+  to: { handle?: string; topic?: string; clientSessionId?: string },
+  reached: Array<{ handle: string; session: MemberSession }>,
+): string {
+  const who = to.handle ? flattenForContext(slug(to.handle) || to.handle) : undefined;
+  if (to.clientSessionId) {
+    const where = reached[0]?.session.topic;
+    return `→ ${who ?? 'someone'}, session ${to.clientSessionId}${where ? ` in ${flattenForContext(where)}` : ''}`;
+  }
+  if (who && to.topic) {
+    const ids = reached.map((r) => r.session.clientSessionId);
+    return `→ ${who} in ${flattenForContext(to.topic)}${ids.length > 0 ? `: session ${ids.join(', ')}` : ''}`;
+  }
+  if (who) {
+    const where = reached.map((r) => `${r.session.clientSessionId} in ${flattenForContext(r.session.topic)}`);
+    return `→ ${who}, every session${where.length > 0 ? `: ${where.join(', ')}` : ''}`;
+  }
+  const whom = reached.map((r) => `${flattenForContext(r.handle)} (session ${r.session.clientSessionId})`);
+  return `→ topic ${flattenForContext(to.topic ?? '')}${whom.length > 0 ? `: ${whom.join(', ')}` : ''}`;
 }
 
 export function inFuture(ts: number): string {

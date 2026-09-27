@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Claim, Member, Message, Task, TaskList } from '../src/lib/model.js';
 import {
   claimConflictReason, planBacklog, renderBacklog, renderChannelEvent, renderClaim, renderMember, renderMemberLines,
-  renderMessage, renderSession, renderTask, renderTaskList, renderTaskListsLine,
+  renderMessage, renderReach, renderSession, renderTask, renderTaskList, renderTaskListsLine,
 } from '../src/lib/render.js';
 import { flattenForContext } from '../src/lib/state.js';
 
@@ -284,5 +284,28 @@ describe('a backlog of unread messages', () => {
       expect(line).not.toMatch(/[\r\n]/);
       expect(line).not.toContain(LINE_SEPARATOR);
     }
+  });
+});
+
+describe('where a sent message went', () => {
+  const session = (clientSessionId: string, topic: string) => ({ clientSessionId, topic, connectedAt: 0 });
+
+  it('names the member, the topic and the sessions it reached', () => {
+    expect(renderReach({ handle: 'carlos', clientSessionId: 's-c1' }, [{ handle: 'carlos', session: session('s-c1', 'collab') }]))
+      .toBe('→ carlos, session s-c1 in collab');
+    expect(renderReach({ handle: '@Carlos', topic: 'collab' }, [{ handle: 'carlos', session: session('s-c1', 'collab') }]))
+      .toBe('→ carlos in collab: session s-c1');
+    expect(renderReach({ handle: 'ana' }, [{ handle: 'ana', session: session('s-a1', 'masterlive') }]))
+      .toBe('→ ana, every session: s-a1 in masterlive');
+    expect(renderReach({ topic: 'masterlive' }, [
+      { handle: 'carlos', session: session('s-c2', 'masterlive') }, { handle: 'ana', session: session('s-a1', 'masterlive') },
+    ])).toBe('→ topic masterlive: carlos (session s-c2), ana (session s-a1)');
+    expect(renderReach({ handle: 'bob' }, [])).toBe('→ bob, every session');
+  });
+
+  it('keeps topics and names chosen by others on one line', () => {
+    const line = renderReach({ topic: 'a\nb' }, [{ handle: `x${LINE_SEPARATOR}y`, session: session('s1', 'a\nb') }]);
+    expect(line).not.toMatch(/[\r\n]/);
+    expect(line).not.toContain(LINE_SEPARATOR);
   });
 });

@@ -19,17 +19,22 @@ addressed to that topic or to its user. Claims and shared context belong to the 
 
 Every `collab_send` and `collab_done` says who it is for. There is no channel-wide broadcast:
 
+- `replyTo: <seq>`: the answer to a message you got. It goes back to exactly the session that wrote
+  it, or, if that session is gone, to its member in the topic it came from. This is how to answer.
 - `topic: "<topic>"`: everyone else working in that topic. This is the usual choice for your own
   topic.
-- `user: "<handle>"`: every session of that member, whatever topic they are in. Use it for
-  something personal to them, or when you don't know where they are.
-- both: only that member's sessions in that topic.
+- `user: "<handle>"`: that member in your topic, when they have a session there; otherwise every
+  session of theirs, and the confirmation says so. Add `anyTopic: true` for something personal to
+  them that should reach all of their sessions.
+- `user` and `topic`: only that member's sessions in that topic.
 - `session: "<id>"`, with or without `user`: just that one session. A member can have several
   sessions open, even in the same topic; `collab_status` lists each one with its full id. It must
   be connected right now.
 
-Each message you receive shows who sent it as `handle@topic (session <id>)`. A reply to `user`
-reaches that person; add `session` to reach only the session that wrote to you.
+Each message you receive shows who sent it as `#<seq> handle@topic (session <id>)`; answer it with
+`replyTo: <seq>`. The confirmation of every send names where it went, as
+`→ carlos in collab-global: session <id>`, so a message that reached more than you meant is visible
+at once.
 
 ## When to reach for the channel
 

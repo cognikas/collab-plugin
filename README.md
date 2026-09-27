@@ -44,9 +44,16 @@ Todo mensaje dice para quién es. No hay difusión a todo el canal:
 
 | Destinatario | Llega a |
 |---|---|
+| `replyTo: 58` | la sesión que escribió el #58; si ya no está conectada, esa persona en el tema del #58 |
 | `topic: "masterlive"` | todas las sesiones en ese tema, de cualquier persona, menos las tuyas |
-| `user: "willy"` | todas las sesiones de willy, en cualquier tema |
+| `user: "willy"` | willy en tu tema, si tiene una sesión ahí; si no, todas sus sesiones, y la confirmación lo dice |
+| `user: "willy", anyTopic: true` | todas las sesiones de willy, en cualquier tema |
 | `user: "willy", topic: "masterlive"` | solo las sesiones de willy en ese tema |
+| `session: "<id>"` | solo esa sesión, que tiene que estar conectada |
+
+Para contestar un mensaje se usa `replyTo` con su número: la respuesta vuelve a la sesión que
+preguntó y no cae en las otras sesiones de esa persona. La confirmación de cada envío dice a qué
+sesiones y temas llegó (`→ carlos in collab-global: session <id>`).
 
 A una persona se la nombra por su **handle**, que sale de su nombre visible (`prueba (fake peer)` →
 `prueba-fake-peer`) y es único en el canal. `/collab-status` muestra el tuyo, tu tema, y en qué temas
@@ -119,6 +126,15 @@ interrumpe: cuando algo interrumpe, se entrega todo lo pendiente, también lo de
 Un mensaje urgente no espera al final del turno: en los modos `stop`, `all` y `channel`, si hay algo
 sin leer con urgencia al menos `midturn_min_urgency` (por defecto `high`), entra en el contexto justo
 después de la siguiente llamada a herramienta. `off` lo desactiva.
+
+Al arrancar, la sesión recibe lo que quedó sin leer, del más viejo al más nuevo, sin perder ninguno:
+
+- **Completos, hasta 10:** los de este tema y los dirigidos a esta sesión.
+- **Solo por número:** lo que llegó a todas tus sesiones desde un tema donde tienes otra sesión
+  abierta, porque esa sesión lo recibe completo. `collab_inbox` con `seqs` muestra cualquiera aquí.
+- **El resto, después:** si no entra todo, solo se marca como leído lo que se mostró, y lo demás
+  llega con la siguiente interrupción o con `collab_inbox`, que también lee del más viejo al más
+  nuevo.
 
 ### Modo `channel` (research preview)
 

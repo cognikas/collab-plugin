@@ -88,6 +88,13 @@ files and `pnpm install`.
   `test/stop-guard.test.ts` asserts two consecutive `Stop`s interrupt exactly once.
 - **One high-water-mark cursor.** Urgency decides *whether* to interrupt, never *what* is shown:
   every interruption delivers all unread messages up to the seq it acks.
+- **A delivery marks delivered only what it showed.** The session start and `collab_inbox` go oldest
+  first and ack through the last message shown, in full or by number (`planBacklog`, `unreadPage`).
+  Showing the newest and acking everything is how the startup summary once lost messages.
+- **`user` alone is resolved in the client** (`resolveRecipient` in `src/lib/sessions.ts`): that
+  member in this session's topic when they have a live session there, otherwise every session of
+  theirs, with a note; `anyTopic` asks for all of them, and `replyTo` answers the session that wrote.
+  The server's visibility rule is untouched.
 - **Peer text is untrusted input to the model.** Everything rendered is prefixed with
   `UNTRUSTED_NOTE` and flattened with `flattenForContext` (newlines, Unicode separators, controls,
   bidi overrides); channel events also neutralize `<channel`. Regression tests cover this.

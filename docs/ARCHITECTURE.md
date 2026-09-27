@@ -213,6 +213,17 @@ del servidor:
   lugar de ampliar el reparto en silencio.
 - **Mensaje para esta sesión:** se muestra como `→ you (this session)`, comparando con la id propia
   que el daemon expone en `GET /status`.
+- **Destinatario por defecto:** `resolveRecipient` (`src/lib/sessions.ts`) lo decide antes de enviar,
+  con la presencia que tiene el daemon:
+  - `replyTo` va a la sesión que escribió ese mensaje, que sale del inbox local. Si ya no está
+    conectada, va a su miembro en el tema del mensaje, que es donde sigue la conversación.
+  - `user` sin tema ni sesión va a ese miembro en el tema propio si tiene una sesión viva ahí. Si no,
+    va a todas sus sesiones, con una nota en la confirmación. `anyTopic` pide todas a propósito. Así
+    lo de un proyecto no cae en las sesiones que esa persona tiene abiertas en otros.
+  - Es una decisión del cliente: el protocolo y el backend no cambian, y quién ve qué lo sigue
+    decidiendo el servidor.
+- **Confirmación:** `sentLine` nombra las sesiones que la presencia dice que cubre el destinatario
+  (`reachedSessions`), junto al conteo que devuelve el servidor.
 
 ### El guard anti-bucle del hook `Stop`
 

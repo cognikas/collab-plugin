@@ -82,9 +82,10 @@ function renderChannelSummary(
   lines.push(peers.length > 0
     ? ['Members:', ...peers.flatMap((m) => renderMemberLines(m, state.self, clientSessionId))].join('\n')
     : 'Members: nobody else has joined this channel yet');
-  lines.push(`Address every collab_send and collab_done: topic "${topic}" reaches the others in this topic, `
-    + 'user "<handle>" every session of that member, both that member\'s sessions in that topic; '
-    + 'add session "<id>" to reach just that one session.');
+  lines.push('Address every collab_send and collab_done: replyTo <seq> answers exactly the session that wrote that '
+    + `message; topic "${topic}" reaches the others in this topic; user "<handle>" that member in this topic when they `
+    + 'are in it, otherwise every session of theirs (anyTopic: true for all of them on purpose); user and topic, that '
+    + 'member\'s sessions in that topic; session "<id>" just that one session.');
 
   if (state.claims.length > 0) {
     lines.push('Files claimed in this topic right now:');
@@ -247,8 +248,8 @@ function onStop(config: PluginConfig, clientSessionId: string, tracksTurns: bool
       ...unread.map((message) => renderMessage(message, state.self, clientSessionId)),
       '',
       'Take them into account now: answer questions, pick up work that was just unblocked, '
-      + 'or acknowledge with the collab_send tool, addressed back to the sender (with its session to reach only the '
-      + 'session that wrote). If nothing is needed, say so briefly and stop.',
+      + 'or acknowledge with the collab_send tool, with replyTo set to the message\'s number so the answer goes back '
+      + 'to exactly the session that wrote it. If nothing is needed, say so briefly and stop.',
     ].join('\n'),
   );
   // Exit code 2 is what blocks the stop and feeds stderr back to the model.
