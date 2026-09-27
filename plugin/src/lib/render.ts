@@ -72,6 +72,104 @@ export function renderMessage(message: Message, self = '', ownSession = ''): str
     + `${flattenForContext(message.text)}${refs}`;
 }
 
+/**
+ * A backlog of unread messages as one delivery shows it. Two things decide it.
+ *
+ * Where each message is best read. One addressed to this member with no topic
+ * reaches every session they have, so when it was sent from a topic where they
+ * have another live session, that session gets it in full and this one only
+ * lists it by number; collab_inbox `seqs` opens it here. Everything else is
+ * shown in full.
+ *
+ * How much fits. The read cursor is a single high-water mark, so a delivery can
+ * only mark delivered a prefix of the backlog: messages go in oldest first until
+ * one no longer fits, and everything from there on stays unread for the next
+ * delivery. Marking all of it delivered while showing only part is how the
+ * session start used to lose messages.
+ */
+export interface Backlog {
+  /** Shown in full here, oldest first. */
+  full: Message[];
+  /** Listed by number only, per topic, with the session of this member that gets them in full. */
+  elsewhere: Array<{ topic: string; session: string; messages: Message[] }>;
+  /** The newest seq shown, in full or listed: the most a delivery may mark delivered. 0 when nothing is. */
+  throughSeq: number;
+  /** Unread messages past `throughSeq`, left for the next delivery. */
+  remaining: number;
+}
+
+export interface BacklogOptions {
+  self: string;
+  ownSession: string;
+  /** This session's topic. */
+  topic: string;
+  members: Member[];
+  maxFull?: number;
+  maxListed?: number;
+}
+
+export function planBacklog(messages: Message[], options: BacklogOptions): Backlog {
+  const { self, ownSession, topic, members, maxFull = 10, maxListed = 40 } = options;
+  const me = members.find((m) => m.memberId === self);
+  const others = me ? liveSessions(me).filter((s) => s.clientSessionId !== ownSession) : [];
+  const full: Message[] = [];
+  const groups = new Map<string, { topic: string; session: string; messages: Message[] }>();
+  let listed = 0;
+  let throughSeq = 0;
+  let taken = 0;
+
+  for (const message of messages) {
+    const to = message.to ?? {};
+    const wide = !to.topic && !to.clientSessionId;
+    // The session that sent it never gets it back, so it cannot be where it is read.
+    const home = wide && message.fromTopic && message.fromTopic !== topic
+      ? others.find((s) => s.topic === message.fromTopic && s.clientSessionId !== message.fromClientSessionId)
+      : undefined;
+    if (home) {
+      if (listed >= maxListed) break;
+      const group = groups.get(home.topic) ?? { topic: home.topic, session: home.clientSessionId, messages: [] };
+      group.messages.push(message);
+      groups.set(home.topic, group);
+      listed++;
+    } else {
+      if (full.length >= maxFull) break;
+      full.push(message);
+    }
+    throughSeq = message.seq;
+    taken++;
+  }
+
+  return { full, elsewhere: [...groups.values()], throughSeq, remaining: messages.length - taken };
+}
+
+/** `carlos: #14 #16? · you (another session): #20`, in order, `?` marking questions. */
+function renderListed(messages: Message[], self: string): string {
+  const bySender = new Map<string, string[]>();
+  for (const message of messages) {
+    const who = message.fromMemberId === self ? 'you (another session)' : flattenForContext(message.fromHandle || message.fromName);
+    bySender.set(who, [...(bySender.get(who) ?? []), `#${message.seq}${message.type === 'question' ? '?' : ''}`]);
+  }
+  return [...bySender].map(([who, seqs]) => `${who}: ${seqs.join(' ')}`).join(' · ');
+}
+
+/** A backlog as lines of context, below a header the caller writes: see `planBacklog`. */
+export function renderBacklog(backlog: Backlog, self: string, ownSession = ''): string[] {
+  const lines: string[] = [];
+  const grouped = backlog.elsewhere.length > 0;
+  if (grouped && backlog.full.length > 0) lines.push(`Here, in full (${backlog.full.length}):`);
+  for (const message of backlog.full) lines.push(renderMessage(message, self, ownSession));
+  for (const group of backlog.elsewhere) {
+    lines.push(`For your session ${group.session} in ${flattenForContext(group.topic)}, which gets them in full `
+      + `— listed here by number only (${group.messages.length}):`);
+    lines.push(`  ${renderListed(group.messages, self)}`);
+  }
+  if (grouped) lines.push('  (? = question) collab_inbox with `seqs` shows any of them here in full.');
+  if (backlog.remaining > 0) {
+    lines.push(`${backlog.remaining} more unread after #${backlog.throughSeq}, not shown yet: collab_inbox shows them.`);
+  }
+  return lines;
+}
+
 export function inFuture(ts: number): string {
   const minutes = Math.max(0, Math.round((ts - Date.now()) / 60000));
   return minutes >= 60 ? `${Math.floor(minutes / 60)}h${minutes % 60}m` : `${minutes}m`;

@@ -31,8 +31,8 @@ import {
 import { resolveSessionTarget } from './lib/sessions.js';
 import { PLUGIN_VERSION } from './lib/version.js';
 import {
-  flattenForContext as flat, interruptionBatch, readChannelStatus, readCursor, readLocalState, readTurn, registerMcpServer,
-  unreadMessages, unregisterMcpServer, writeChannelStatus, writeCursor, type ChannelStatus,
+  flattenForContext as flat, interruptionBatch, messagesBySeq, readChannelStatus, readCursor, readLocalState, readTurn,
+  registerMcpServer, unreadMessages, unreadPage, unregisterMcpServer, writeChannelStatus, writeCursor, type ChannelStatus,
 } from './lib/state.js';
 
 // This server is a direct child of the Claude Code process, like the hooks: a
@@ -189,26 +189,46 @@ const TOOLS: ToolDefinition[] = [
   {
     name: 'collab_inbox',
     title: 'Read channel messages',
-    description: 'Messages addressed to this session that it has not processed yet. Marks them read unless told otherwise.',
+    description:
+      'Messages addressed to this session that it has not processed yet, oldest first. Marks them read unless told '
+      + 'otherwise. `seqs` shows given messages in full instead, read or not: the ones a delivery listed only by number.',
     inputSchema: {
       type: 'object',
       properties: {
         markRead: { type: 'boolean', description: 'Advance the read cursor. Default true.' },
-        limit: { type: 'number', description: 'Maximum number of messages to return. Default 50.' },
+        limit: { type: 'number', description: 'At most this many, oldest first; the rest stay unread. Default 50.' },
+        seqs: {
+          type: 'array',
+          items: { type: 'number' },
+          maxItems: 50,
+          description: 'Show these messages from this session\'s inbox, read or not, e.g. [14, 16]. Changes nothing.',
+        },
       },
       additionalProperties: false,
     },
-    handler: async ({ markRead = true, limit = 50 }) => {
+    handler: async ({ markRead = true, limit = 50, seqs }) => {
       const state = await status();
-      const unread = unreadMessages(session()).slice(-(limit as number));
-      if (unread.length === 0) return 'No unread messages.';
 
-      if (markRead) {
-        const highest = Math.max(...unread.map((m) => m.seq));
-        writeCursor(session(), { delivered: highest });
-        await callDaemon(session(), '/ack', { method: 'POST', body: { cursor: highest } }).catch(() => undefined);
+      if (Array.isArray(seqs) && seqs.length > 0) {
+        const { found, missing } = messagesBySeq(session(), seqs as unknown[]);
+        const lines = found.length > 0 ? [UNTRUSTED_NOTE, ...found.map((m) => formatMessage(m, state.self))] : [];
+        if (missing.length > 0) lines.push(`Not in this session's inbox: ${missing.map((seq) => `#${seq}`).join(', ')}.`);
+        return lines.join('\n') || 'No such messages.';
       }
-      return unread.map((m) => formatMessage(m, state.self)).join('\n');
+
+      const { page, rest } = unreadPage(session(), Number(limit));
+      if (page.length === 0) return 'No unread messages.';
+
+      const last = page[page.length - 1]!.seq;
+      if (markRead) {
+        writeCursor(session(), { delivered: last });
+        await callDaemon(session(), '/ack', { method: 'POST', body: { cursor: last } }).catch(() => undefined);
+      }
+      return [
+        UNTRUSTED_NOTE,
+        ...page.map((m) => formatMessage(m, state.self)),
+        ...(rest > 0 ? [`${rest} more unread after #${last}${markRead ? ': call collab_inbox again for them' : ''}.`] : []),
+      ].join('\n');
     },
   },
 

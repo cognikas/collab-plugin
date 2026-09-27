@@ -358,6 +358,25 @@ export function unreadMessages(clientSessionId: string, options: UnreadOptions =
   return readInbox(clientSessionId, delivered).filter((message) => URGENCY_RANK[message.urgency] >= threshold);
 }
 
+/**
+ * The oldest `limit` unread messages, and how many are left after them. Oldest
+ * first because the read cursor is a high-water mark: marking read up to the
+ * last one returned skips nothing, where taking the newest would mark the older
+ * ones read unseen.
+ */
+export function unreadPage(clientSessionId: string, limit = 50): { page: Message[]; rest: number } {
+  const unread = unreadMessages(clientSessionId);
+  const page = unread.slice(0, Number.isFinite(limit) && limit >= 1 ? Math.floor(limit) : 50);
+  return { page, rest: unread.length - page.length };
+}
+
+/** Given messages from this session's inbox, read or not, and the seqs it does not hold. */
+export function messagesBySeq(clientSessionId: string, seqs: unknown[]): { found: Message[]; missing: number[] } {
+  const wanted = [...new Set(seqs.map(Number).filter((seq) => Number.isInteger(seq) && seq > 0))];
+  const found = readInbox(clientSessionId, 0).filter((message) => wanted.includes(message.seq));
+  return { found, missing: wanted.filter((seq) => !found.some((message) => message.seq === seq)) };
+}
+
 export interface WaitFilter extends UnreadOptions {
   /** Only these message types end the wait. Empty or omitted means any. */
   types?: string[];

@@ -250,6 +250,29 @@ describe('recent vs unread', () => {
   });
 });
 
+describe('reading the inbox by page and by number', () => {
+  it('pages unread messages oldest first and says how many are left', async () => {
+    const { appendInbox, writeCursor, unreadPage } = await stateModule();
+    for (let seq = 1; seq <= 5; seq++) appendInbox('s1', message({ seq }));
+    writeCursor('s1', { delivered: 1 });
+
+    const { page, rest } = unreadPage('s1', 2);
+    expect(page.map((m) => m.seq)).toEqual([2, 3]);
+    expect(rest).toBe(2);
+    expect(unreadPage('s1', Number.NaN).page).toHaveLength(4);
+  });
+
+  it('finds given messages whether read or not, and names the seqs it does not hold', async () => {
+    const { appendInbox, writeCursor, messagesBySeq } = await stateModule();
+    for (const seq of [3, 4, 7]) appendInbox('s1', message({ seq }));
+    writeCursor('s1', { delivered: 7 });
+
+    const { found, missing } = messagesBySeq('s1', [7, 3, 3, 9, 'x', -1]);
+    expect(found.map((m) => m.seq)).toEqual([3, 7]);
+    expect(missing).toEqual([9]);
+  });
+});
+
 describe('waiting from a cursor', () => {
   it('returns what is already past the cursor instead of waiting for the next one', async () => {
     const { appendInbox, messagesSince } = await stateModule();

@@ -9,8 +9,8 @@ import { isChannelPrompt } from './lib/channel.js';
 import { gitBranch, readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
 import { callDaemon, daemonsToRetire, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
 import {
-  claimConflictReason, liveSessions, renderClaim, renderMemberLines, renderMessage, renderSession, renderTaskListsLine,
-  UNTRUSTED_NOTE,
+  claimConflictReason, liveSessions, planBacklog, renderBacklog, renderClaim, renderMemberLines, renderMessage,
+  renderSession, renderTaskListsLine, UNTRUSTED_NOTE,
 } from './lib/render.js';
 import {
   flattenForContext, interruptionBatch, listDaemons, pathMatchesClaim, readChannelStatus, readCursor, readLocalState,
@@ -106,19 +106,22 @@ function renderChannelSummary(
   }
 
   const messages = mode === 'unread' ? unreadMessages(clientSessionId) : recentMessages(clientSessionId, 10);
+  const backlog = planBacklog(messages, {
+    self: state.self, ownSession: clientSessionId, topic: state.topic, members: state.members,
+  });
 
   if (messages.length > 0) {
+    const shown = messages.length - backlog.remaining;
     lines.push(mode === 'unread'
-      ? `${messages.length} unread message(s). ${UNTRUSTED_NOTE}`
+      ? `${messages.length} unread message(s)${backlog.remaining > 0 ? `, the oldest ${shown} below` : ''}. ${UNTRUSTED_NOTE}`
       : `Last ${messages.length} message(s) on the channel, re-shown because compaction dropped them. `
         + `You have probably seen these already. ${UNTRUSTED_NOTE}`);
-    for (const message of messages.slice(-10)) lines.push(renderMessage(message, state.self, clientSessionId));
+    lines.push(...renderBacklog(backlog, state.self, clientSessionId));
   }
 
-  return {
-    text: lines.join('\n'),
-    highestSeq: messages.length > 0 ? Math.max(...messages.map((m) => m.seq)) : 0,
-  };
+  // Only what was shown, in full or by number, counts as delivered: the rest
+  // stays unread for the Stop hook or collab_inbox.
+  return { text: lines.join('\n'), highestSeq: backlog.throughSeq };
 }
 
 /**

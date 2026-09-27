@@ -151,6 +151,29 @@ describe('a session start', () => {
     expect(registration('other-window')?.pid).toBe(otherWindow);
   }, 30_000);
 
+  it('shows the unread backlog oldest first, and marks delivered only what it showed', async () => {
+    // This process runs the session: its own daemon is kept, so nothing reaches the network.
+    await startFake('s1', process.pid);
+    writeLocalState('s1', { channel: 'team', topic: 't1', connected: true });
+    for (let seq = 1; seq <= 12; seq++) appendInbox('s1', message(seq));
+
+    const result = spawnSync(process.execPath, [hook, 'SessionStart'], {
+      input: JSON.stringify({ session_id: 's1', hook_event_name: 'SessionStart', source: 'startup', cwd: tempDir }),
+      env: { ...env, CLAUDE_PLUGIN_ROOT: root }, encoding: 'utf8', timeout: 20_000,
+    });
+    expect(result.status).toBe(0);
+
+    const context = (JSON.parse(result.stdout) as { hookSpecificOutput: { additionalContext: string } })
+      .hookSpecificOutput.additionalContext;
+    expect(context).toContain('12 unread message(s), the oldest 10 below.');
+    expect(context).toContain('#1 ana@t1');
+    expect(context).toContain('#10 ana@t1');
+    expect(context).not.toContain('#11 ana@t1');
+    expect(context).toContain('2 more unread after #10, not shown yet');
+    // The two it did not show stay unread for the Stop hook or collab_inbox.
+    expect(readCursor('s1').delivered).toBe(10);
+  }, 30_000);
+
   it('ends with SessionEnd asking the session\'s daemon to stop', async () => {
     const daemon = await startFake('s1', process.pid);
     const result = spawnSync(process.execPath, [hook, 'SessionEnd'], {
