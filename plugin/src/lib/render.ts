@@ -1,6 +1,6 @@
 import { isClientSessionId, slug } from '@collab/protocol';
 import type { Claim, Member, MemberSession, Message, Task, TaskList } from './model.js';
-import { flattenForContext } from './state.js';
+import { flattenForContext, type LocalState } from './state.js';
 
 /**
  * How peer messages are rendered into this session's model context. Shared by
@@ -376,6 +376,32 @@ export function renderInProgressBrief(tasks: Task[], self: string, ownSession = 
       : `${flattenForContext(holder.handle || holder.name)}${id ? ` (session ${id})` : ''}`;
     return `  - ${who}: ${progressLine(task, 60)}`;
   });
+}
+
+/**
+ * The status line: `collab ● carlos rc5#2 40%, ana ux#1 · 2 unread`. Whether
+ * the channel is up, what the others in the topic have in progress (at most
+ * two, newest word first), and what this session has not read. It goes to a
+ * terminal rather than to the model, which is one more reason to flatten what
+ * others chose: a control character there is a terminal escape.
+ */
+export function renderStatusLine(state: LocalState, unread: number, ownSession: string): string {
+  if (!state.channel) return '';
+  const others = state.tasksStale ? [] : inProgress(state.tasks ?? [])
+    .filter((task) => !(task.holder!.memberId === state.self && task.holder!.clientSessionId === ownSession));
+  const doing = others.slice(0, 2).map((task) => {
+    const who = task.holder!.memberId === state.self ? 'you' : clip(task.holder!.handle || task.holder!.name, 20);
+    const percent = task.lastProgress?.percent;
+    return `${who} ${clip(task.list, 16)}#${task.number}${percent === undefined ? '' : ` ${percent}%`}`;
+  });
+  if (others.length > 2) doing.push(`+${others.length - 2}`);
+
+  const parts = [
+    ...(doing.length > 0 ? [doing.join(', ')] : []),
+    ...(unread > 0 ? [`${unread} unread`] : []),
+    ...(state.connected ? [] : ['offline']),
+  ];
+  return `collab ${state.connected ? '●' : '○'}${parts.length > 0 ? ` ${parts.join(' · ')}` : ''}`;
 }
 
 /** Keeps only letters for a tag attribute value; the server validates these, but they end up in markup. */

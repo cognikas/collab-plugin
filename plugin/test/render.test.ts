@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { Claim, Member, Message, Task, TaskList } from '../src/lib/model.js';
 import {
   claimConflictReason, planBacklog, renderBacklog, renderChannelEvent, renderClaim, renderInProgress, renderInProgressBrief,
-  renderMember, renderMemberLines, renderMessage, renderReach, renderSession, renderTask, renderTaskList, renderTaskListsLine,
+  renderMember, renderMemberLines, renderMessage, renderReach, renderSession, renderStatusLine, renderTask, renderTaskList,
+  renderTaskListsLine,
 } from '../src/lib/render.js';
-import { flattenForContext } from '../src/lib/state.js';
+import { flattenForContext, type LocalState } from '../src/lib/state.js';
 
 // Built from code points, so this file itself holds no invisible characters.
 const LINE_SEPARATOR = String.fromCharCode(0x2028);
@@ -359,5 +360,41 @@ describe('who is doing what', () => {
       expect(line).not.toContain(LINE_SEPARATOR);
       expect(line.length).toBeLessThan(200);
     }
+  });
+});
+
+describe('the status line', () => {
+  const holder = (memberId: string, handle: string, clientSessionId: string) => ({ memberId, handle, name: handle, clientSessionId, since: 0 });
+  const busy = (list: string, number: number, who: ReturnType<typeof holder>, percent?: number, at = 0) => task({
+    list, number, status: 'in_progress', holder: who,
+    ...(percent === undefined ? {} : { lastProgress: { text: '', percent, authorName: who.name, at } }),
+  });
+  const state = (overrides: Partial<LocalState> = {}): LocalState => ({
+    connected: true, channel: 'team', self: 'WILLY', handle: 'willy', topic: 't1', members: [], claims: [], contextIndex: [],
+    taskLists: [], latestSeq: 0, updatedAt: 0, tasksStale: false, ...overrides,
+  });
+
+  it('says the channel is up, what the others have in progress, and what is unread', () => {
+    const tasks = [busy('rc5', 2, holder('CARLOS', 'carlos', 's-c1'), 40, 2), busy('ux', 2, holder('WILLY', 'willy', 's-w1'))];
+    expect(renderStatusLine(state({ tasks }), 2, 's-w1')).toBe('collab ● carlos rc5#2 40% · 2 unread');
+    expect(renderStatusLine(state({ tasks }), 0, 's-other')).toBe('collab ● carlos rc5#2 40%, you ux#2');
+    expect(renderStatusLine(state(), 0, 's-w1')).toBe('collab ●');
+  });
+
+  it('shows two tasks at most, and how many more there are', () => {
+    const tasks = [1, 2, 3, 4].map((n) => busy('rc5', n, holder('ANA', 'ana', `s-a${n}`), undefined));
+    expect(renderStatusLine(state({ tasks }), 0, 's-w1')).toBe('collab ● ana rc5#1, ana rc5#2, +2');
+  });
+
+  it('says when it is offline, leaves out tasks that may be old, and is empty off the channel', () => {
+    const tasks = [busy('rc5', 2, holder('CARLOS', 'carlos', 's-c1'))];
+    expect(renderStatusLine(state({ connected: false }), 1, 's-w1')).toBe('collab ○ 1 unread · offline');
+    expect(renderStatusLine(state({ tasks, tasksStale: true }), 0, 's-w1')).toBe('collab ●');
+    expect(renderStatusLine(state({ channel: '' }), 3, 's-w1')).toBe('');
+  });
+
+  it('prints no terminal escape a member could have put in a name', () => {
+    const tasks = [busy('rc5', 2, holder('X', `x${String.fromCharCode(27)}[31mred`, 's-x'))];
+    expect(renderStatusLine(state({ tasks }), 0, 's-w1')).not.toContain(String.fromCharCode(27));
   });
 });

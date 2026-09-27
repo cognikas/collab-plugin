@@ -292,6 +292,21 @@ Según lo que pase después del primer push:
 Sin esa regla, un push que cae en un turno largo se daría por perdido. El mensaje se entregaría dos
 veces, y el canal se apagaría para el resto de la sesión con un falso «not registered».
 
+### La statusline
+
+Claude Code corre el comando de statusline en cada refresco, con el JSON de la sesión por stdin. Por
+eso `src/statusline.ts` es un bundle aparte, `dist/statusline.mjs`, de unos 5 KB: no carga el
+protocolo ni va a la red. Solo lee `state.json` y el inbox de la sesión, y tarda unos 30 ms.
+
+- **Dónde están los datos.** El comando corre desde el script del usuario, fuera del plugin, así que
+  `CLAUDE_PLUGIN_DATA` no está o es de otro plugin. Busca la sesión en
+  `~/.claude/plugins/data/collab-channel-*` y usa la carpeta que la tiene.
+- **Qué muestra.** Si el canal está conectado, hasta dos tareas en curso de los demás en el tema, sacadas
+  del caché de tareas, y cuántos mensajes quedan sin leer. Mientras el caché está atrasado
+  (`tasksStale`), no muestra tareas.
+- **Una terminal, no el modelo.** Los nombres y claves que eligieron otros se aplanan igual: en una
+  terminal, un carácter de control es una secuencia de escape.
+
 ### Por qué `dist/` está commiteado
 
 El segundo programador no debería ejecutar `npm install` para usar un plugin. Los bundles (daemon,

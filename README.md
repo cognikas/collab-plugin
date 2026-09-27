@@ -32,6 +32,8 @@ son compatibles: 1.0 necesita el endpoint y una invitación del backend nuevo.
 | Ana va a refactorizar `src/api/**` | Lo reserva con `collab_claim`; a Bruno se le pide confirmación antes de editar ahí |
 | Bruno no puede seguir sin el endpoint | `collab_wait` bloquea su turno hasta que llegue el aviso, sin polling |
 | El trabajo del release tiene varias partes | Ana las pone en una lista con `collab_task_add`; cada sesión toma una con `collab_task_update`, reporta avance y la cierra, y el tema se entera de cada cierre |
+| Bruno quiere saber en qué anda cada uno | `collab_status` muestra las tareas en curso por persona y sesión, con avance y última nota; el arranque de sesión también, y su statusline dice `collab ● ana rc5#2 40%` |
+| Ana le contesta a Bruno | `replyTo` con el número del mensaje: la respuesta vuelve a la sesión que preguntó, no a todas las de Bruno |
 | Nadie más está conectado | El mensaje sale también como aviso offline (email opcional, vía SNS) |
 
 ## Temas y destinatarios
@@ -166,6 +168,26 @@ como `stop`. Un push descartado no se pierde; en el caso dudoso un mensaje puede
 | `/collab-done [qué]` | Anunciar trabajo terminado — el reemplazo del handoff |
 | `/collab-claim [rutas]` | Reservar archivos antes de un refactor |
 | `/collab-join` | Unirse al canal, o diagnosticar por qué no conecta |
+
+### Statusline
+
+`plugin/dist/statusline.mjs` imprime una línea para la statusline de Claude Code: si el canal está
+conectado, qué tienen en curso los demás en tu tema (hasta dos tareas) y cuántos mensajes no leíste.
+
+```
+collab ● carlos rc5#2 40% · 2 unread
+```
+
+Lee el JSON de la sesión por stdin, como cualquier comando de statusline, y solo mira los archivos
+que el daemon deja en disco: no va a la red y tarda unos 30 ms. Si la sesión no está en el canal, no
+imprime nada. Para sumarla a tu script de statusline:
+
+```bash
+input=$(cat)   # el JSON que Claude Code le pasa a tu script
+collab_line=$(ls -td ~/.claude/plugins/cache/*/collab-channel/*/dist/statusline.mjs 2>/dev/null | head -1)
+collab=$([ -n "$collab_line" ] && printf '%s' "$input" | node "$collab_line" 2>/dev/null)
+# ... y agrega "$collab" a lo que tu script ya imprime
+```
 
 ## Desarrollo
 

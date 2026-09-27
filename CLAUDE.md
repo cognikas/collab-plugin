@@ -27,7 +27,8 @@ pnpm --filter @collab/plugin exec vitest run -t "<test name>"
 node scripts/version.mjs <x.y.z[-pre]>
 ```
 
-`test/stop-guard.test.ts` runs the built `plugin/dist/hook.mjs`, so build before testing.
+`test/stop-guard.test.ts`, `test/session-hooks.test.ts` and `test/statusline.test.ts` run the built
+bundles in `plugin/dist/`, so build before testing.
 
 Against a deployed 1.0 backend only (outward-facing: confirm with the user first):
 
@@ -115,7 +116,7 @@ files and `pnpm install`.
   server of ours for 3 minutes (`v1/mcp/`). `clearDaemonInfo` only removes the caller's own
   registration.
 - **Task lists** are read with `ListTasks` over HTTP only, and written like any request. `state.json`
-  keeps only the topic's lists with open tasks, from hello, from TASK notices (their payload carries
+  keeps the topic's lists with open tasks, from hello, from TASK notices (their payload carries
   the list's counts) and from this session's own results, since a session gets no notice of its own
   change (`applyTaskList`, which never rolls a list back). It also keeps the topic's open tasks
   (`tasks`), for who-is-doing-what without the network: a TASK notice does not say who has a task
