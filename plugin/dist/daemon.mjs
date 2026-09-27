@@ -3709,7 +3709,7 @@ var require_websocket_server = __commonJS({
 // src/daemon.ts
 import crypto from "node:crypto";
 import http from "node:http";
-import fs3 from "node:fs";
+import fs4 from "node:fs";
 import path3 from "node:path";
 
 // ../node_modules/.pnpm/ws@8.21.3/node_modules/ws/wrapper.mjs
@@ -9558,8 +9558,11 @@ function repoName(cwd, git = runGit) {
   const commonDir = common ? path.resolve(top, common) : "";
   return commonDir && path.basename(commonDir) === ".git" ? path.basename(path.dirname(commonDir)) : path.basename(top);
 }
-function resolveTopic(config, cwd, git = runGit) {
-  return slug(config.topic) || slug(repoName(cwd, git)) || "general";
+function resolveTopic(config, cwd, git = runGit, saved = "") {
+  return slug(config.topic) || slug(saved) || slug(repoName(cwd, git)) || "general";
+}
+function gitBranch(cwd, git = runGit) {
+  return git(cwd, ["rev-parse", "--abbrev-ref", "HEAD"]);
 }
 function readCredentials() {
   try {
@@ -9657,11 +9660,38 @@ function writeJsonAtomic(filePath, value) {
 function writeDaemonInfo(info) {
   writeJsonAtomic(file(info.clientSessionId, "daemon.json"), info);
 }
-function clearDaemonInfo(clientSessionId2) {
+function clearDaemonInfo(clientSessionId2, pid) {
+  const target = file(clientSessionId2, "daemon.json");
+  if (pid !== void 0 && readJson(target, void 0)?.pid !== pid) return;
   try {
-    fs2.unlinkSync(file(clientSessionId2, "daemon.json"));
+    fs2.unlinkSync(target);
   } catch {
   }
+}
+function mcpRoot() {
+  return path2.join(dataDir(), "mcp");
+}
+function unregisterMcpServer(pid) {
+  try {
+    fs2.unlinkSync(path2.join(mcpRoot(), `${pid}.json`));
+  } catch {
+  }
+}
+function liveMcpServers(claudePid2) {
+  let entries;
+  try {
+    entries = fs2.readdirSync(mcpRoot());
+  } catch {
+    return [];
+  }
+  const live = [];
+  for (const entry of entries.filter((name) => name.endsWith(".json"))) {
+    const info = readJson(path2.join(mcpRoot(), entry), void 0);
+    if (!info) continue;
+    if (!isAlive(info.pid)) unregisterMcpServer(info.pid);
+    else if (info.claudePid === claudePid2) live.push(info);
+  }
+  return live;
 }
 function isAlive(pid) {
   try {
@@ -9735,10 +9765,10 @@ function messagesSince(clientSessionId2, since, filter = {}) {
 // src/lib/channel.ts
 var PLUGIN_NAME = "collab-channel";
 var BUSY_STALE_MS = 10 * 60 * 1e3;
-var CONFIRM_WINDOW_MS = 180 * 1e3;
+var CONFIRM_WINDOW_MS = 10 * 60 * 1e3;
 
 // src/lib/version.ts
-var PLUGIN_VERSION = "1.0.0-rc.3";
+var PLUGIN_VERSION = "1.0.0-rc.4";
 
 // src/lib/wire.ts
 function ms(ts) {
@@ -10076,20 +10106,51 @@ function osaLiteral(value) {
   return `"${value.replace(/["\\]/g, "\\$&").replace(/[\r\n]+/g, " ")}"`;
 }
 
+// src/lib/process.ts
+import { execFile } from "node:child_process";
+import fs3 from "node:fs";
+function readCommandLine(pid) {
+  if (process.platform === "linux") {
+    try {
+      return Promise.resolve(fs3.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0").join(" ").trim());
+    } catch {
+      return Promise.resolve(void 0);
+    }
+  }
+  const [command, args] = process.platform === "win32" ? ["powershell.exe", [
+    "-NoProfile",
+    "-NonInteractive",
+    "-Command",
+    `(Get-CimInstance Win32_Process -Filter "ProcessId=${Math.trunc(pid)}").CommandLine`
+  ]] : ["ps", ["-o", "command=", "-p", String(Math.trunc(pid))]];
+  return new Promise((resolve) => {
+    execFile(command, args, { timeout: 1e4, windowsHide: true }, (err, stdout) => {
+      resolve(err ? void 0 : stdout.trim() || void 0);
+    });
+  });
+}
+var SPARE = /(^|\s)(--)?bg-spare(\s|=|$)/;
+function becameSpare(atStart, now) {
+  return atStart !== void 0 && now !== void 0 && !SPARE.test(atStart) && SPARE.test(now);
+}
+
 // src/daemon.ts
 var MAX_LIFETIME_MS = 12 * 60 * 60 * 1e3;
 var RECONNECT_BASE_MS = 500;
 var RECONNECT_MAX_MS = 3e4;
+var MCP_GONE_MS = 3 * 60 * 1e3;
 var clientSessionId = process.env.COLLAB_CLIENT_SESSION_ID ?? "default";
 var claudePid = Number(process.env.COLLAB_CLAUDE_PID) || void 0;
 var sessionCwd = process.env.COLLAB_CWD || process.cwd();
+var sessionRepo = process.env.COLLAB_REPO || path3.basename(sessionCwd);
+var sessionBranch = process.env.COLLAB_BRANCH || gitBranch(sessionCwd);
 var logFile = path3.join(sessionDir(clientSessionId), "daemon.log");
 function log(...parts) {
   const line = `${(/* @__PURE__ */ new Date()).toISOString()} ${parts.map((p) => typeof p === "string" ? p : JSON.stringify(p)).join(" ")}
 `;
   try {
-    fs3.mkdirSync(path3.dirname(logFile), { recursive: true });
-    fs3.appendFileSync(logFile, line);
+    fs4.mkdirSync(path3.dirname(logFile), { recursive: true });
+    fs4.appendFileSync(logFile, line);
   } catch {
   }
 }
@@ -10118,6 +10179,10 @@ var Daemon = class {
   token = crypto.randomBytes(24).toString("base64url");
   /** The last subscribe asked the server where to start, so its hello sets the local cursor. */
   freshHello = false;
+  /** The Claude Code process's command line when this daemon started, to notice it turning into a spare. */
+  claudeCommandLine;
+  /** Last time the watchdog saw an MCP server of this plugin under the Claude Code process. */
+  mcpSeenAt;
   async start() {
     const port = await this.startLoopbackServer();
     writeDaemonInfo({
@@ -10131,6 +10196,11 @@ var Daemon = class {
     });
     log("daemon started", { pid: process.pid, port, channel: this.creds.channel, topic: this.origin.topic });
     this.connect();
+    if (claudePid && process.platform !== "win32") {
+      void readCommandLine(claudePid).then((line) => {
+        this.claudeCommandLine = line;
+      });
+    }
     setInterval(() => this.heartbeat(), HEARTBEAT_SECONDS * 1e3).unref();
     setInterval(() => this.watchdog(), 6e4).unref();
     setTimeout(() => this.shutdown("max lifetime reached"), MAX_LIFETIME_MS).unref();
@@ -10150,7 +10220,7 @@ var Daemon = class {
         log("connected");
         const since = replayFrom();
         this.freshHello = since === void 0;
-        ws.send(encodeFrame(subscribeFrame({ since, repo: process.env.COLLAB_REPO, branch: process.env.COLLAB_BRANCH })));
+        ws.send(encodeFrame(subscribeFrame({ since, repo: sessionRepo, branch: sessionBranch })));
       });
       ws.on("message", (data) => this.onServerFrame(data.toString()));
       ws.on("close", (code) => {
@@ -10240,12 +10310,37 @@ var Daemon = class {
   /** Exits when the session that owns this daemon has clearly moved on. */
   watchdog() {
     try {
-      const info = JSON.parse(fs3.readFileSync(path3.join(sessionDir(clientSessionId), "daemon.json"), "utf8"));
+      const info = JSON.parse(fs4.readFileSync(path3.join(sessionDir(clientSessionId), "daemon.json"), "utf8"));
       if (info.pid !== process.pid) return this.shutdown("another daemon took over this session");
     } catch {
       return this.shutdown("daemon registration disappeared");
     }
-    if (claudePid && !isAlive(claudePid)) this.shutdown("its Claude Code process exited");
+    if (claudePid && !isAlive(claudePid)) return this.shutdown("its Claude Code process exited");
+    if (claudePid) this.checkSessionStillThere(claudePid);
+  }
+  /**
+   * The Claude Code process can outlive the session this daemon serves: it can
+   * turn into a background spare (`claude bg-spare`) with SessionEnd never
+   * getting through, and then this daemon stays connected as a session nobody
+   * reads. Two signs that the session is over while its process lives on: the
+   * process became a spare since this daemon started, or no MCP server of this
+   * plugin has run under that process for a while (Claude Code runs it for as
+   * long as it keeps a session's tools, and keeps it across a /clear). The
+   * second only counts once one was seen, since a session can run without it.
+   * Past both, the next session start in that process retires this daemon, and
+   * the 12 h cap ends it anyway.
+   */
+  checkSessionStillThere(pid) {
+    if (liveMcpServers(pid).length > 0) {
+      this.mcpSeenAt = Date.now();
+    } else if (this.mcpSeenAt && Date.now() - this.mcpSeenAt > MCP_GONE_MS) {
+      return this.shutdown("the MCP server of its session is gone: the session ended");
+    }
+    const atStart = this.claudeCommandLine;
+    if (atStart === void 0) return;
+    void readCommandLine(pid).then((now) => {
+      if (becameSpare(atStart, now)) this.shutdown("its Claude Code process became a background spare: the session ended");
+    });
   }
   isOpen() {
     return this.subscribed && this.ws?.readyState === wrapper_default.OPEN;
@@ -10463,7 +10558,7 @@ var Daemon = class {
       this.ws?.close();
     } catch {
     }
-    clearDaemonInfo(clientSessionId);
+    clearDaemonInfo(clientSessionId, process.pid);
     setTimeout(() => process.exit(0), 100).unref();
   }
 };
@@ -10472,7 +10567,7 @@ function replayFrom() {
   return since > 0 ? since : void 0;
 }
 function sessionTopic(config) {
-  return readLocalState(clientSessionId).topic || resolveTopic(config, sessionCwd);
+  return resolveTopic(config, sessionCwd, void 0, readLocalState(clientSessionId).topic);
 }
 function respond(res, status, body) {
   const payload = JSON.stringify(body);
@@ -10494,11 +10589,11 @@ async function ensureCredentials(config) {
   if (existing?.memberId && existing.secret) return existing;
   if (!config.apiEndpoint) throw new Error("collab-channel: api_endpoint is not configured (run /config)");
   if (!config.inviteCode) throw new Error("collab-channel: no credentials and no invite_code to redeem (run /config)");
-  fs3.mkdirSync(dataDir(), { recursive: true });
+  fs4.mkdirSync(dataDir(), { recursive: true });
   const lock = path3.join(dataDir(), "join.lock");
   let owned = false;
   try {
-    fs3.writeFileSync(lock, String(process.pid), { flag: "wx" });
+    fs4.writeFileSync(lock, String(process.pid), { flag: "wx" });
     owned = true;
   } catch {
     for (let i = 0; i < 60; i++) {
@@ -10526,7 +10621,7 @@ async function ensureCredentials(config) {
   } finally {
     if (owned) {
       try {
-        fs3.unlinkSync(lock);
+        fs4.unlinkSync(lock);
       } catch {
       }
     }

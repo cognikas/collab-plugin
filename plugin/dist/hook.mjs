@@ -1,9 +1,6 @@
 import { createRequire as __createRequire } from 'node:module';
 const require = __createRequire(import.meta.url);
 
-// src/hook.ts
-import { execFileSync } from "node:child_process";
-
 // ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/names.js
 var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 function isClientSessionId(value) {
@@ -18,6 +15,7 @@ import path2 from "node:path";
 var URGENCY_RANK = { low: 0, normal: 1, high: 2 };
 
 // src/lib/config.ts
+import { execFileSync } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
@@ -64,9 +62,25 @@ function readConfig() {
     memberSecret: optional(e.CLAUDE_PLUGIN_OPTION_MEMBER_SECRET)
   };
 }
+var runGit = (cwd, args) => {
+  try {
+    return execFileSync("git", args, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      timeout: 2e3,
+      windowsHide: true
+    }).trim() || void 0;
+  } catch {
+    return void 0;
+  }
+};
 function setEnv(name, value, env = process.env) {
   if (value) env[name] = value;
   else delete env[name];
+}
+function gitBranch(cwd, git = runGit) {
+  return git(cwd, ["rev-parse", "--abbrev-ref", "HEAD"]);
 }
 function readCredentials() {
   try {
@@ -142,6 +156,16 @@ function readDaemonInfo(clientSessionId) {
   const info = readJson(file(clientSessionId, "daemon.json"), void 0);
   if (!info) return void 0;
   return isAlive(info.pid) ? info : void 0;
+}
+function listDaemons() {
+  const root = sessionsRoot();
+  let entries;
+  try {
+    entries = fs2.readdirSync(root);
+  } catch {
+    return [];
+  }
+  return entries.map((entry) => readJson(path2.join(root, entry, "daemon.json"), void 0)).filter((info) => Boolean(info) && isAlive(info.pid)).sort((a, b) => b.startedAt - a.startedAt);
 }
 function isAlive(pid) {
   try {
@@ -327,7 +351,7 @@ function claimConflictReason(claim) {
 // src/lib/channel.ts
 var PLUGIN_NAME = "collab-channel";
 var BUSY_STALE_MS = 10 * 60 * 1e3;
-var CONFIRM_WINDOW_MS = 180 * 1e3;
+var CONFIRM_WINDOW_MS = 10 * 60 * 1e3;
 function isChannelPrompt(prompt) {
   if (typeof prompt !== "string") return false;
   return prompt.includes("collab_seq=") || prompt.includes(`plugin:${PLUGIN_NAME}`) || prompt.includes(UNTRUSTED_NOTE);
@@ -337,6 +361,32 @@ function isChannelPrompt(prompt) {
 import { spawn } from "node:child_process";
 import path3 from "node:path";
 import { fileURLToPath } from "node:url";
+
+// src/lib/process.ts
+import { execFile } from "node:child_process";
+import fs3 from "node:fs";
+function readCommandLine(pid) {
+  if (process.platform === "linux") {
+    try {
+      return Promise.resolve(fs3.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0").join(" ").trim());
+    } catch {
+      return Promise.resolve(void 0);
+    }
+  }
+  const [command, args] = process.platform === "win32" ? ["powershell.exe", [
+    "-NoProfile",
+    "-NonInteractive",
+    "-Command",
+    `(Get-CimInstance Win32_Process -Filter "ProcessId=${Math.trunc(pid)}").CommandLine`
+  ]] : ["ps", ["-o", "command=", "-p", String(Math.trunc(pid))]];
+  return new Promise((resolve) => {
+    execFile(command, args, { timeout: 1e4, windowsHide: true }, (err, stdout) => {
+      resolve(err ? void 0 : stdout.trim() || void 0);
+    });
+  });
+}
+
+// src/lib/daemon-client.ts
 var here = path3.dirname(fileURLToPath(import.meta.url));
 function daemonEntry() {
   return path3.join(process.env.CLAUDE_PLUGIN_ROOT ?? path3.join(here, ".."), "dist", "daemon.mjs");
@@ -363,9 +413,12 @@ async function ensureDaemon(clientSessionId, timeoutMs = 8e3) {
   throw new DaemonUnavailable("the collab-channel daemon did not start in time");
 }
 async function callDaemon(clientSessionId, path4, options = {}) {
-  const { method = "GET", body, query, timeoutMs = 2e4, autostart = false } = options;
-  const info = autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
+  const info = options.autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
   if (!info) throw new DaemonUnavailable("no collab-channel daemon is running for this session");
+  return request(info, path4, options);
+}
+async function request(info, path4, options) {
+  const { method = "GET", body, query, timeoutMs = 2e4 } = options;
   const url = new URL(`http://127.0.0.1:${info.port}${path4}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== void 0) url.searchParams.set(key, String(value));
@@ -381,8 +434,24 @@ async function callDaemon(clientSessionId, path4, options = {}) {
   if (!res.ok) throw new Error(parsed.error ?? `daemon returned ${res.status}`);
   return parsed;
 }
-function stopDaemon(clientSessionId) {
-  return callDaemon(clientSessionId, "/shutdown", { method: "POST", timeoutMs: 2e3 });
+async function stopDaemon(target, { wait = false } = {}) {
+  const info = typeof target === "string" ? readDaemonInfo(target) : target;
+  if (!info) return;
+  try {
+    await request(info, "/shutdown", { method: "POST", timeoutMs: 1e3 });
+  } catch {
+    if ((await readCommandLine(info.pid))?.includes("daemon.mjs")) {
+      try {
+        process.kill(info.pid);
+      } catch {
+      }
+    }
+  }
+  const deadline = Date.now() + 3e3;
+  while (wait && isAlive(info.pid) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50));
+}
+function daemonsToRetire(daemons, current) {
+  return daemons.filter((d) => d.claudePid !== void 0 && (d.clientSessionId === current.clientSessionId ? d.claudePid !== current.claudePid : d.claudePid === current.claudePid));
 }
 
 // src/hook.ts
@@ -446,23 +515,17 @@ function markDelivered(clientSessionId, highestSeq, extra = {}) {
   writeCursor(clientSessionId, { delivered: highestSeq, ...extra });
   void callDaemon(clientSessionId, "/ack", { method: "POST", body: { cursor: highestSeq }, timeoutMs: 1500 }).catch(() => void 0);
 }
-function gitBranch(cwd) {
-  try {
-    return execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
-      cwd,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-      timeout: 2e3
-    }).trim() || void 0;
-  } catch {
-    return void 0;
-  }
+async function retireStaleDaemons(clientSessionId) {
+  const stale = daemonsToRetire(listDaemons(), { clientSessionId, claudePid: process.ppid });
+  await Promise.all(stale.map((info) => stopDaemon(info, { wait: info.clientSessionId === clientSessionId }).catch(() => void 0)));
 }
 async function onSessionStart(input, config, clientSessionId, tracksTurns) {
+  if (input.source === "compact") return onCompact(config, clientSessionId, tracksTurns);
   const cwd = input.cwd ?? process.cwd();
   setEnv("COLLAB_REPO", cwd.split(/[\\/]/).pop());
   setEnv("COLLAB_BRANCH", gitBranch(cwd));
   process.env.COLLAB_CWD = cwd;
+  if (!input.agent_id) await retireStaleDaemons(clientSessionId);
   try {
     await ensureDaemon(clientSessionId);
     const deadline = Date.now() + 4e3;
@@ -538,10 +601,13 @@ function onPostToolUse(config, clientSessionId) {
     ].join("\n")
   });
 }
-function onPostCompact(config, clientSessionId) {
+function onCompact(config, clientSessionId, tracksTurns) {
   if (config.deliveryMode === "manual") return;
   const summary = renderChannelSummary(clientSessionId, "recent");
-  if (summary) emit("PostCompact", { additionalContext: summary.text });
+  if (!summary) return;
+  const notice = tracksTurns ? channelNotice(clientSessionId, { always: true }) : void 0;
+  emit("SessionStart", { additionalContext: notice ? `${summary.text}
+${notice}` : summary.text });
 }
 function onPreToolUse(input, config, clientSessionId) {
   if (!config.claimWarnings) return;
@@ -577,7 +643,7 @@ function recordTurn(event, input, clientSessionId, exitCode) {
   const now = Date.now();
   switch (event) {
     case "SessionStart":
-      writeTurn(clientSessionId, { busy: false, sessionStartAt: now });
+      if (input.source !== "compact") writeTurn(clientSessionId, { busy: false, sessionStartAt: now });
       break;
     case "UserPromptSubmit":
       writeTurn(clientSessionId, isChannelPrompt(input.prompt) ? { busy: true, activityAt: now } : { busy: true, promptAt: now });
@@ -623,9 +689,6 @@ async function dispatch(event, input, config, clientSessionId, tracksTurns) {
       return 0;
     case "PostToolUse":
       onPostToolUse(config, clientSessionId);
-      return 0;
-    case "PostCompact":
-      onPostCompact(config, clientSessionId);
       return 0;
     case "PreToolUse":
       onPreToolUse(input, config, clientSessionId);

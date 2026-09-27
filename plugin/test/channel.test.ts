@@ -4,9 +4,10 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Message } from '../src/lib/model.js';
 import {
-  BUSY_STALE_MS, CONFIRM_WINDOW_MS, channelFlag, isChannelPrompt, isIdle, pushOutcome,
+  BUSY_STALE_MS, CONFIRM_WINDOW_MS, channelFlag, isChannelPrompt, isIdle, pushOutcome, settlePush,
 } from '../src/lib/channel.js';
-import { pickSession } from '../src/lib/daemon-client.js';
+import { daemonsToRetire, pickSession } from '../src/lib/daemon-client.js';
+import { becameSpare } from '../src/lib/process.js';
 import { renderChannelEvent } from '../src/lib/render.js';
 import type { DaemonInfo, TurnState } from '../src/lib/state.js';
 
@@ -76,6 +77,51 @@ describe('pairing an MCP server with its session', () => {
   });
 });
 
+describe('retiring the daemons a session start makes redundant', () => {
+  it('retires the daemons of sessions this Claude Code process ran before', () => {
+    const daemons = [
+      daemon({ clientSessionId: 'before-clear', claudePid: 100 }),
+      daemon({ clientSessionId: 'other-window', claudePid: 200 }),
+    ];
+    expect(daemonsToRetire(daemons, { clientSessionId: 'after-clear', claudePid: 100 }).map((d) => d.clientSessionId))
+      .toEqual(['before-clear']);
+  });
+
+  it('retires this session\'s own daemon when an earlier process started it, as on a --resume', () => {
+    const earlier = daemon({ clientSessionId: 'resumed', claudePid: 100 });
+    expect(daemonsToRetire([earlier], { clientSessionId: 'resumed', claudePid: 300 })).toEqual([earlier]);
+  });
+
+  it('keeps this session\'s daemon from this process, and daemons started outside Claude Code', () => {
+    const daemons = [
+      daemon({ clientSessionId: 'mine', claudePid: 100 }),
+      daemon({ clientSessionId: 'from-the-cli' }),
+    ];
+    expect(daemonsToRetire(daemons, { clientSessionId: 'mine', claudePid: 100 })).toEqual([]);
+  });
+});
+
+describe('noticing that the Claude Code process became a background spare', () => {
+  const session = '/Users/willy/.local/bin/claude --resume e3ac66a0';
+  const spare = 'claude bg-spare --bg-spare /tmp/cc-daemon-501/spare.sock';
+
+  it('sees the change from a session to a spare', () => {
+    expect(becameSpare(session, spare)).toBe(true);
+  });
+
+  it('leaves a session hosted by a spare from the start alone', () => {
+    // A spare claimed from the pool keeps its command line while it runs a session.
+    expect(becameSpare(spare, spare)).toBe(false);
+  });
+
+  it('needs both command lines, and a spare marker as a word of its own', () => {
+    expect(becameSpare(undefined, spare)).toBe(false);
+    expect(becameSpare(session, undefined)).toBe(false);
+    expect(becameSpare(session, session)).toBe(false);
+    expect(becameSpare(session, 'claude --add-dir /work/bg-spare-notes')).toBe(false);
+  });
+});
+
 describe('detecting the channel flag', () => {
   const exe = '"C:\\Users\\ana\\.local\\bin\\claude.exe"';
 
@@ -116,12 +162,36 @@ describe('when the push may run', () => {
 
   it('waits while a turn is running', () => {
     const now = 1_000_000;
-    expect(isIdle(turn({ busy: true, activityAt: now - 5_000 }), now)).toBe(false);
+    expect(isIdle(turn({ busy: true, activityAt: now - 5_000 }), { now })).toBe(false);
   });
 
   it('gives up on a turn nothing has been heard from, as after an interrupt', () => {
     const now = 10 * BUSY_STALE_MS;
-    expect(isIdle(turn({ busy: true, promptAt: now - BUSY_STALE_MS - 1 }), now)).toBe(true);
+    expect(isIdle(turn({ busy: true, promptAt: now - BUSY_STALE_MS - 1 }), { now })).toBe(true);
+  });
+
+  it('does not give up on a quiet turn before the channel is known to deliver', () => {
+    // A turn waiting on the user's answer to a question: no hook fires for as long as it takes.
+    const now = 10 * BUSY_STALE_MS;
+    expect(isIdle(turn({ busy: true, promptAt: now - BUSY_STALE_MS - 1 }), { now, trustStale: false })).toBe(false);
+    expect(isIdle(turn({ busy: false }), { now, trustStale: false })).toBe(true);
+  });
+});
+
+describe('settling a push', () => {
+  it('trusts a confirmed push, and from then on every push of this process', () => {
+    expect(settlePush('confirmed', false)).toBe('delivered');
+    // Landed in a turn that was slow to show: handing it back would only deliver it twice.
+    expect(settlePush('dropped', true)).toBe('delivered');
+    expect(settlePush('ambiguous', true)).toBe('delivered');
+  });
+
+  it('hands an unproven push back to the hooks before the channel is known to deliver', () => {
+    expect(settlePush('ambiguous', false)).toBe('requeue');
+  });
+
+  it('falls back to the hooks when a first push started no turn at all', () => {
+    expect(settlePush('dropped', false)).toBe('fallback');
   });
 });
 

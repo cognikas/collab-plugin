@@ -1,5 +1,3 @@
-import { execFile } from 'node:child_process';
-import fs from 'node:fs';
 import { UNTRUSTED_NOTE } from './render.js';
 import type { TurnState } from './state.js';
 
@@ -10,17 +8,25 @@ import type { TurnState } from './state.js';
  * Claude Code gives a channel server no way to learn whether it was registered:
  * events for a session not started with the channel flag, or whose organization
  * blocks channels, are dropped without an error. Everything here exists to
- * never mark a message delivered on the strength of a push that went nowhere.
+ * never mark a message delivered on the strength of a push that went nowhere,
+ * and, once a push has got through, never to hand one back to the hooks just
+ * because its turn was slow to show: that only delivers it twice.
  */
 
 export const PLUGIN_NAME = 'collab-channel';
 
-/** A turn with no hook activity for this long is treated as over: Stop does not
- *  fire when the user interrupts, and a stuck `busy` would block pushes forever. */
+/** A turn with no hook activity for this long is treated as over, once the
+ *  channel is known to deliver: Stop does not fire when the user interrupts,
+ *  and a stuck `busy` would block pushes forever. */
 export const BUSY_STALE_MS = 10 * 60 * 1000;
 
-/** How long a push has to show up as a turn before it counts as dropped. */
-export const CONFIRM_WINDOW_MS = 180 * 1000;
+/**
+ * How long a push has to show up as a turn before it counts as dropped.
+ * UserPromptSubmit does not fire for a turn a channel event starts, so the
+ * first sign of that turn is its first tool call ending, or its Stop: a turn
+ * that opens with a build or a subagent takes minutes to leave one.
+ */
+export const CONFIRM_WINDOW_MS = 10 * 60 * 1000;
 
 export type ChannelFlag = 'development' | 'channels';
 
@@ -54,32 +60,16 @@ export function channelFlag(commandLine: string, plugin = PLUGIN_NAME): ChannelF
   return found;
 }
 
-/** Command line of a process, or undefined when the platform will not say. */
-export function readCommandLine(pid: number): Promise<string | undefined> {
-  if (process.platform === 'linux') {
-    try {
-      return Promise.resolve(fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0').join(' ').trim());
-    } catch {
-      return Promise.resolve(undefined);
-    }
-  }
-
-  const [command, args] = process.platform === 'win32'
-    ? ['powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
-      `(Get-CimInstance Win32_Process -Filter "ProcessId=${Math.trunc(pid)}").CommandLine`]]
-    : ['ps', ['-o', 'command=', '-p', String(Math.trunc(pid))]];
-
-  return new Promise((resolve) => {
-    execFile(command, args, { timeout: 10_000, windowsHide: true }, (err, stdout) => {
-      resolve(err ? undefined : stdout.trim() || undefined);
-    });
-  });
-}
-
-/** Idle unless a turn is running, and a turn no hook has heard from in a while is over. */
-export function isIdle(turn: TurnState | undefined, now = Date.now()): boolean {
+/**
+ * Idle unless a turn is running. Stop does not fire when the user interrupts,
+ * so a turn no hook has heard from in a while counts as over — but only with
+ * `trustStale`, once the channel is known to deliver in this process. Before
+ * that, a turn that is only waiting on a long tool call, or on the user's
+ * answer to a question, would take the first push and make it look dropped.
+ */
+export function isIdle(turn: TurnState | undefined, { now = Date.now(), trustStale = true } = {}): boolean {
   if (!turn?.busy) return true;
-  return now - Math.max(turn.promptAt, turn.activityAt) > BUSY_STALE_MS;
+  return trustStale && now - Math.max(turn.promptAt, turn.activityAt) > BUSY_STALE_MS;
 }
 
 export type PushOutcome = 'confirmed' | 'ambiguous' | 'pending' | 'dropped';
@@ -95,6 +85,23 @@ export function pushOutcome(turn: TurnState | undefined, pushedAt: number, now =
   if (turn && turn.promptAt >= pushedAt) return 'ambiguous';
   if (turn && turn.activityAt >= pushedAt) return 'confirmed';
   return now - pushedAt > CONFIRM_WINDOW_MS ? 'dropped' : 'pending';
+}
+
+export type PushSettlement = 'delivered' | 'requeue' | 'fallback';
+
+/**
+ * What to do with a push once its outcome is known. `registered` means an
+ * earlier push from this MCP server was confirmed, so Claude Code has this
+ * channel, and it does not lose an event it received: one that lands while a
+ * turn is running waits in Claude Code until the turn takes it. Every later
+ * push then counts as delivered, whatever the hooks saw; handing it back to
+ * them would only show it twice. Before that, a push that proves nothing goes
+ * back to the hooks, and one that started no turn at all means the channel is
+ * not registered.
+ */
+export function settlePush(outcome: PushOutcome, registered: boolean): PushSettlement {
+  if (outcome === 'confirmed' || registered) return 'delivered';
+  return outcome === 'dropped' ? 'fallback' : 'requeue';
 }
 
 /**

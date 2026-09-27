@@ -142,10 +142,20 @@ export function repoName(cwd: string, git: Git = runGit): string {
 
 /**
  * Which topic a session joins: `COLLAB_TOPIC`, then the `topic` option, then
- * the repo name. A session keeps it for life; the daemon records it.
+ * `saved`, the topic the session already joined, then the repo name.
+ *
+ * An explicit topic wins over the saved one, so setting it takes effect the
+ * next time the session's daemon starts, `--resume` included. Without one, a
+ * daemon that restarts mid-session keeps the saved topic even if the working
+ * directory now points at another repo: a session does not wander off halfway.
  */
-export function resolveTopic(config: Pick<PluginConfig, 'topic'>, cwd: string, git: Git = runGit): string {
-  return slug(config.topic) || slug(repoName(cwd, git)) || 'general';
+export function resolveTopic(config: Pick<PluginConfig, 'topic'>, cwd: string, git: Git = runGit, saved = ''): string {
+  return slug(config.topic) || slug(saved) || slug(repoName(cwd, git)) || 'general';
+}
+
+/** The branch checked out in `cwd`, or undefined outside git. */
+export function gitBranch(cwd: string, git: Git = runGit): string | undefined {
+  return git(cwd, ['rev-parse', '--abbrev-ref', 'HEAD']);
 }
 
 export function readCredentials(): Credentials | undefined {

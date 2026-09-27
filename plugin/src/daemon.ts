@@ -17,7 +17,7 @@ import {
   ackViaHttp, ApiError, channelViaHttp, fetchState, issueTicket, join, sendViaHttp, type Origin,
 } from './lib/api.js';
 import {
-  dataDir, readConfig, resolveCredentials, resolveTopic, sessionDir, writeCredentials,
+  dataDir, gitBranch, readConfig, resolveCredentials, resolveTopic, sessionDir, writeCredentials,
   type Credentials, type PluginConfig,
 } from './lib/config.js';
 import {
@@ -26,21 +26,27 @@ import {
 } from './lib/frames.js';
 import { URGENCY_RANK, type Message, type OutgoingMessage, type Urgency } from './lib/model.js';
 import { notifyDesktop } from './lib/notify.js';
+import { becameSpare, readCommandLine } from './lib/process.js';
 import {
-  appendInbox, clearDaemonInfo, isAlive, messagesSince, readCursor, readInbox, readLocalState, truncateInbox,
-  writeCursor, writeDaemonInfo, writeLocalState,
+  appendInbox, clearDaemonInfo, isAlive, liveMcpServers, messagesSince, readCursor, readInbox, readLocalState,
+  truncateInbox, writeCursor, writeDaemonInfo, writeLocalState,
 } from './lib/state.js';
 import { toClaim, toContextEntry, toSendRequest, toSendResult, toSnapshot } from './lib/wire.js';
 
 const MAX_LIFETIME_MS = 12 * 60 * 60 * 1000;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 30_000;
+/** How long the session's MCP server may be gone before the session counts as over. A reconnect takes seconds. */
+const MCP_GONE_MS = 3 * 60 * 1000;
 
 const clientSessionId = process.env.COLLAB_CLIENT_SESSION_ID ?? 'default';
 /** The Claude Code process this daemon serves, from the hook or MCP server that started it. */
 const claudePid = Number(process.env.COLLAB_CLAUDE_PID) || undefined;
 /** The session's working directory, from the hook (its stdin) or the MCP server (CLAUDE_PROJECT_DIR). */
 const sessionCwd = process.env.COLLAB_CWD || process.cwd();
+/** Where the session works, for presence. A daemon the MCP server starts has no hook to tell it, so it looks. */
+const sessionRepo = process.env.COLLAB_REPO || path.basename(sessionCwd);
+const sessionBranch = process.env.COLLAB_BRANCH || gitBranch(sessionCwd);
 const logFile = path.join(sessionDir(clientSessionId), 'daemon.log');
 
 function log(...parts: unknown[]): void {
@@ -71,6 +77,10 @@ class Daemon {
   private readonly token = crypto.randomBytes(24).toString('base64url');
   /** The last subscribe asked the server where to start, so its hello sets the local cursor. */
   private freshHello = false;
+  /** The Claude Code process's command line when this daemon started, to notice it turning into a spare. */
+  private claudeCommandLine?: string;
+  /** Last time the watchdog saw an MCP server of this plugin under the Claude Code process. */
+  private mcpSeenAt?: number;
 
   constructor(private readonly config: PluginConfig, private creds: Credentials, private readonly origin: Origin) {}
 
@@ -83,6 +93,11 @@ class Daemon {
     log('daemon started', { pid: process.pid, port, channel: this.creds.channel, topic: this.origin.topic });
 
     this.connect();
+
+    // A Windows process cannot change its command line: there, a spare is a new process.
+    if (claudePid && process.platform !== 'win32') {
+      void readCommandLine(claudePid).then((line) => { this.claudeCommandLine = line; });
+    }
 
     setInterval(() => this.heartbeat(), HEARTBEAT_SECONDS * 1000).unref();
     setInterval(() => this.watchdog(), 60_000).unref();
@@ -110,7 +125,7 @@ class Daemon {
           // The socket is useless until subscribed: the server answers with hello.
           const since = replayFrom();
           this.freshHello = since === undefined;
-          ws.send(encodeFrame(subscribeFrame({ since, repo: process.env.COLLAB_REPO, branch: process.env.COLLAB_BRANCH })));
+          ws.send(encodeFrame(subscribeFrame({ since, repo: sessionRepo, branch: sessionBranch })));
         });
 
         ws.on('message', (data) => this.onServerFrame(data.toString()));
@@ -214,7 +229,34 @@ class Daemon {
     }
     // A crash skips SessionEnd. Without this the daemon lingered for 12 hours,
     // and the MCP pairing by pid could match it to whatever process reused the pid.
-    if (claudePid && !isAlive(claudePid)) this.shutdown('its Claude Code process exited');
+    if (claudePid && !isAlive(claudePid)) return this.shutdown('its Claude Code process exited');
+    if (claudePid) this.checkSessionStillThere(claudePid);
+  }
+
+  /**
+   * The Claude Code process can outlive the session this daemon serves: it can
+   * turn into a background spare (`claude bg-spare`) with SessionEnd never
+   * getting through, and then this daemon stays connected as a session nobody
+   * reads. Two signs that the session is over while its process lives on: the
+   * process became a spare since this daemon started, or no MCP server of this
+   * plugin has run under that process for a while (Claude Code runs it for as
+   * long as it keeps a session's tools, and keeps it across a /clear). The
+   * second only counts once one was seen, since a session can run without it.
+   * Past both, the next session start in that process retires this daemon, and
+   * the 12 h cap ends it anyway.
+   */
+  private checkSessionStillThere(pid: number): void {
+    if (liveMcpServers(pid).length > 0) {
+      this.mcpSeenAt = Date.now();
+    } else if (this.mcpSeenAt && Date.now() - this.mcpSeenAt > MCP_GONE_MS) {
+      return this.shutdown('the MCP server of its session is gone: the session ended');
+    }
+
+    const atStart = this.claudeCommandLine;
+    if (atStart === undefined) return;
+    void readCommandLine(pid).then((now) => {
+      if (becameSpare(atStart, now)) this.shutdown('its Claude Code process became a background spare: the session ended');
+    });
   }
 
   private isOpen(): boolean {
@@ -461,7 +503,8 @@ class Daemon {
     this.stopping = true;
     log('shutting down', reason);
     try { this.ws?.close(); } catch { /* already gone */ }
-    clearDaemonInfo(clientSessionId);
+    // Only its own registration: a daemon that took the session over keeps its.
+    clearDaemonInfo(clientSessionId, process.pid);
     setTimeout(() => process.exit(0), 100).unref();
   }
 }
@@ -477,12 +520,13 @@ function replayFrom(): number | undefined {
 }
 
 /**
- * The topic this session joined. A daemon the MCP server restarts (after the
- * 12 h cap, or a crash) keeps it, even if the environment it starts in says
- * otherwise: a session does not change topic halfway.
+ * The topic this session joins. An explicit one (`COLLAB_TOPIC`, the `topic`
+ * option) wins, so fixing it takes effect when the session next starts,
+ * `--resume` included. Otherwise a daemon started again for the session (after
+ * the 12 h cap, a crash, a resume) keeps the topic the session already had.
  */
 function sessionTopic(config: PluginConfig): string {
-  return readLocalState(clientSessionId).topic || resolveTopic(config, sessionCwd);
+  return resolveTopic(config, sessionCwd, undefined, readLocalState(clientSessionId).topic);
 }
 
 function respond(res: http.ServerResponse, status: number, body: unknown): void {

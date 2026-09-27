@@ -15205,8 +15205,8 @@ var Protocol = class {
     this._taskStore = _options?.taskStore;
     this._taskMessageQueue = _options?.taskMessageQueue;
     if (this._taskStore) {
-      this.setRequestHandler(GetTaskRequestSchema, async (request, extra) => {
-        const task = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+      this.setRequestHandler(GetTaskRequestSchema, async (request2, extra) => {
+        const task = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
         if (!task) {
           throw new McpError(ErrorCode.InvalidParams, "Failed to retrieve task: Task not found");
         }
@@ -15214,9 +15214,9 @@ var Protocol = class {
           ...task
         };
       });
-      this.setRequestHandler(GetTaskPayloadRequestSchema, async (request, extra) => {
+      this.setRequestHandler(GetTaskPayloadRequestSchema, async (request2, extra) => {
         const handleTaskResult = async () => {
-          const taskId = request.params.taskId;
+          const taskId = request2.params.taskId;
           if (this._taskMessageQueue) {
             let queuedMessage;
             while (queuedMessage = await this._taskMessageQueue.dequeue(taskId, extra.sessionId)) {
@@ -15267,9 +15267,9 @@ var Protocol = class {
         };
         return await handleTaskResult();
       });
-      this.setRequestHandler(ListTasksRequestSchema, async (request, extra) => {
+      this.setRequestHandler(ListTasksRequestSchema, async (request2, extra) => {
         try {
-          const { tasks, nextCursor } = await this._taskStore.listTasks(request.params?.cursor, extra.sessionId);
+          const { tasks, nextCursor } = await this._taskStore.listTasks(request2.params?.cursor, extra.sessionId);
           return {
             tasks,
             nextCursor,
@@ -15279,20 +15279,20 @@ var Protocol = class {
           throw new McpError(ErrorCode.InvalidParams, `Failed to list tasks: ${error2 instanceof Error ? error2.message : String(error2)}`);
         }
       });
-      this.setRequestHandler(CancelTaskRequestSchema, async (request, extra) => {
+      this.setRequestHandler(CancelTaskRequestSchema, async (request2, extra) => {
         try {
-          const task = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+          const task = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
           if (!task) {
-            throw new McpError(ErrorCode.InvalidParams, `Task not found: ${request.params.taskId}`);
+            throw new McpError(ErrorCode.InvalidParams, `Task not found: ${request2.params.taskId}`);
           }
           if (isTerminal(task.status)) {
             throw new McpError(ErrorCode.InvalidParams, `Cannot cancel task in terminal status: ${task.status}`);
           }
-          await this._taskStore.updateTaskStatus(request.params.taskId, "cancelled", "Client cancelled task execution.", extra.sessionId);
-          this._clearTaskQueue(request.params.taskId);
-          const cancelledTask = await this._taskStore.getTask(request.params.taskId, extra.sessionId);
+          await this._taskStore.updateTaskStatus(request2.params.taskId, "cancelled", "Client cancelled task execution.", extra.sessionId);
+          this._clearTaskQueue(request2.params.taskId);
+          const cancelledTask = await this._taskStore.getTask(request2.params.taskId, extra.sessionId);
           if (!cancelledTask) {
-            throw new McpError(ErrorCode.InvalidParams, `Task not found after cancellation: ${request.params.taskId}`);
+            throw new McpError(ErrorCode.InvalidParams, `Task not found after cancellation: ${request2.params.taskId}`);
           }
           return {
             _meta: {},
@@ -15413,14 +15413,14 @@ var Protocol = class {
     }
     Promise.resolve().then(() => handler(notification)).catch((error2) => this._onerror(new Error(`Uncaught error in notification handler: ${error2}`)));
   }
-  _onrequest(request, extra) {
-    const handler = this._requestHandlers.get(request.method) ?? this.fallbackRequestHandler;
+  _onrequest(request2, extra) {
+    const handler = this._requestHandlers.get(request2.method) ?? this.fallbackRequestHandler;
     const capturedTransport = this._transport;
-    const relatedTaskId = request.params?._meta?.[RELATED_TASK_META_KEY]?.taskId;
+    const relatedTaskId = request2.params?._meta?.[RELATED_TASK_META_KEY]?.taskId;
     if (handler === void 0) {
       const errorResponse = {
         jsonrpc: "2.0",
-        id: request.id,
+        id: request2.id,
         error: {
           code: ErrorCode.MethodNotFound,
           message: "Method not found"
@@ -15438,17 +15438,17 @@ var Protocol = class {
       return;
     }
     const abortController = new AbortController();
-    this._requestHandlerAbortControllers.set(request.id, abortController);
-    const taskCreationParams = isTaskAugmentedRequestParams(request.params) ? request.params.task : void 0;
-    const taskStore = this._taskStore ? this.requestTaskStore(request, capturedTransport?.sessionId) : void 0;
+    this._requestHandlerAbortControllers.set(request2.id, abortController);
+    const taskCreationParams = isTaskAugmentedRequestParams(request2.params) ? request2.params.task : void 0;
+    const taskStore = this._taskStore ? this.requestTaskStore(request2, capturedTransport?.sessionId) : void 0;
     const fullExtra = {
       signal: abortController.signal,
       sessionId: capturedTransport?.sessionId,
-      _meta: request.params?._meta,
+      _meta: request2.params?._meta,
       sendNotification: async (notification) => {
         if (abortController.signal.aborted)
           return;
-        const notificationOptions = { relatedRequestId: request.id };
+        const notificationOptions = { relatedRequestId: request2.id };
         if (relatedTaskId) {
           notificationOptions.relatedTask = { taskId: relatedTaskId };
         }
@@ -15458,7 +15458,7 @@ var Protocol = class {
         if (abortController.signal.aborted) {
           throw new McpError(ErrorCode.ConnectionClosed, "Request was cancelled");
         }
-        const requestOptions = { ...options, relatedRequestId: request.id };
+        const requestOptions = { ...options, relatedRequestId: request2.id };
         if (relatedTaskId && !requestOptions.relatedTask) {
           requestOptions.relatedTask = { taskId: relatedTaskId };
         }
@@ -15469,7 +15469,7 @@ var Protocol = class {
         return await this.request(r, resultSchema, requestOptions);
       },
       authInfo: extra?.authInfo,
-      requestId: request.id,
+      requestId: request2.id,
       requestInfo: extra?.requestInfo,
       taskId: relatedTaskId,
       taskStore,
@@ -15479,16 +15479,16 @@ var Protocol = class {
     };
     Promise.resolve().then(() => {
       if (taskCreationParams) {
-        this.assertTaskHandlerCapability(request.method);
+        this.assertTaskHandlerCapability(request2.method);
       }
-    }).then(() => handler(request, fullExtra)).then(async (result) => {
+    }).then(() => handler(request2, fullExtra)).then(async (result) => {
       if (abortController.signal.aborted) {
         return;
       }
       const response = {
         result,
         jsonrpc: "2.0",
-        id: request.id
+        id: request2.id
       };
       if (relatedTaskId && this._taskMessageQueue) {
         await this._enqueueTaskMessage(relatedTaskId, {
@@ -15505,7 +15505,7 @@ var Protocol = class {
       }
       const errorResponse = {
         jsonrpc: "2.0",
-        id: request.id,
+        id: request2.id,
         error: {
           code: Number.isSafeInteger(error2["code"]) ? error2["code"] : ErrorCode.InternalError,
           message: error2.message ?? "Internal error",
@@ -15522,8 +15522,8 @@ var Protocol = class {
         await capturedTransport?.send(errorResponse);
       }
     }).catch((error2) => this._onerror(new Error(`Failed to send response: ${error2}`))).finally(() => {
-      if (this._requestHandlerAbortControllers.get(request.id) === abortController) {
-        this._requestHandlerAbortControllers.delete(request.id);
+      if (this._requestHandlerAbortControllers.get(request2.id) === abortController) {
+        this._requestHandlerAbortControllers.delete(request2.id);
       }
     });
   }
@@ -15627,11 +15627,11 @@ var Protocol = class {
    *
    * @experimental Use `client.experimental.tasks.requestStream()` to access this method.
    */
-  async *requestStream(request, resultSchema, options) {
+  async *requestStream(request2, resultSchema, options) {
     const { task } = options ?? {};
     if (!task) {
       try {
-        const result = await this.request(request, resultSchema, options);
+        const result = await this.request(request2, resultSchema, options);
         yield { type: "result", result };
       } catch (error2) {
         yield {
@@ -15643,7 +15643,7 @@ var Protocol = class {
     }
     let taskId;
     try {
-      const createResult = await this.request(request, CreateTaskResultSchema, options);
+      const createResult = await this.request(request2, CreateTaskResultSchema, options);
       if (createResult.task) {
         taskId = createResult.task.taskId;
         yield { type: "taskCreated", task: createResult.task };
@@ -15691,7 +15691,7 @@ var Protocol = class {
    *
    * Do not use this method to emit notifications! Use notification() instead.
    */
-  request(request, resultSchema, options) {
+  request(request2, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
     return new Promise((resolve, reject) => {
       const earlyReject = (error2) => {
@@ -15703,9 +15703,9 @@ var Protocol = class {
       }
       if (this._options?.enforceStrictCapabilities === true) {
         try {
-          this.assertCapabilityForMethod(request.method);
+          this.assertCapabilityForMethod(request2.method);
           if (task) {
-            this.assertTaskCapability(request.method);
+            this.assertTaskCapability(request2.method);
           }
         } catch (e) {
           earlyReject(e);
@@ -15715,16 +15715,16 @@ var Protocol = class {
       options?.signal?.throwIfAborted();
       const messageId = this._requestMessageId++;
       const jsonrpcRequest = {
-        ...request,
+        ...request2,
         jsonrpc: "2.0",
         id: messageId
       };
       if (options?.onprogress) {
         this._progressHandlers.set(messageId, options.onprogress);
         jsonrpcRequest.params = {
-          ...request.params,
+          ...request2.params,
           _meta: {
-            ...request.params?._meta || {},
+            ...request2.params?._meta || {},
             progressToken: messageId
           }
         };
@@ -15928,8 +15928,8 @@ var Protocol = class {
   setRequestHandler(requestSchema, handler) {
     const method = getMethodLiteral(requestSchema);
     this.assertRequestHandlerCapability(method);
-    this._requestHandlers.set(method, (request, extra) => {
-      const parsed = parseWithCompat(requestSchema, request);
+    this._requestHandlers.set(method, (request2, extra) => {
+      const parsed = parseWithCompat(requestSchema, request2);
       return Promise.resolve(handler(parsed, extra));
     });
   }
@@ -16044,19 +16044,19 @@ var Protocol = class {
       }, { once: true });
     });
   }
-  requestTaskStore(request, sessionId2) {
+  requestTaskStore(request2, sessionId2) {
     const taskStore = this._taskStore;
     if (!taskStore) {
       throw new Error("No task store configured");
     }
     return {
       createTask: async (taskParams) => {
-        if (!request) {
+        if (!request2) {
           throw new Error("No request provided");
         }
-        return await taskStore.createTask(taskParams, request.id, {
-          method: request.method,
-          params: request.params
+        return await taskStore.createTask(taskParams, request2.id, {
+          method: request2.method,
+          params: request2.params
         }, sessionId2);
       },
       getTask: async (taskId) => {
@@ -16217,8 +16217,8 @@ var ExperimentalServerTasks = class {
    *
    * @experimental
    */
-  requestStream(request, resultSchema, options) {
-    return this._server.requestStream(request, resultSchema, options);
+  requestStream(request2, resultSchema, options) {
+    return this._server.requestStream(request2, resultSchema, options);
   }
   /**
    * Sends a sampling request and returns an AsyncGenerator that yields response messages.
@@ -16463,12 +16463,12 @@ var Server = class extends Protocol {
     this._capabilities = options?.capabilities ?? {};
     this._instructions = options?.instructions;
     this._jsonSchemaValidator = options?.jsonSchemaValidator ?? new AjvJsonSchemaValidator();
-    this.setRequestHandler(InitializeRequestSchema, (request) => this._oninitialize(request));
+    this.setRequestHandler(InitializeRequestSchema, (request2) => this._oninitialize(request2));
     this.setNotificationHandler(InitializedNotificationSchema, () => this.oninitialized?.());
     if (this._capabilities.logging) {
-      this.setRequestHandler(SetLevelRequestSchema, async (request, extra) => {
+      this.setRequestHandler(SetLevelRequestSchema, async (request2, extra) => {
         const transportSessionId = extra.sessionId || extra.requestInfo?.headers["mcp-session-id"] || void 0;
-        const { level } = request.params;
+        const { level } = request2.params;
         const parseResult = LoggingLevelSchema.safeParse(level);
         if (parseResult.success) {
           this._loggingLevels.set(transportSessionId, parseResult.data);
@@ -16518,14 +16518,14 @@ var Server = class extends Protocol {
     }
     const method = methodValue;
     if (method === "tools/call") {
-      const wrappedHandler = async (request, extra) => {
-        const validatedRequest = safeParse2(CallToolRequestSchema, request);
+      const wrappedHandler = async (request2, extra) => {
+        const validatedRequest = safeParse2(CallToolRequestSchema, request2);
         if (!validatedRequest.success) {
           const errorMessage = validatedRequest.error instanceof Error ? validatedRequest.error.message : String(validatedRequest.error);
           throw new McpError(ErrorCode.InvalidParams, `Invalid tools/call request: ${errorMessage}`);
         }
         const { params } = validatedRequest.data;
-        const result = await Promise.resolve(handler(request, extra));
+        const result = await Promise.resolve(handler(request2, extra));
         if (params.task) {
           const taskValidationResult = safeParse2(CreateTaskResultSchema, result);
           if (!taskValidationResult.success) {
@@ -16656,10 +16656,10 @@ var Server = class extends Protocol {
     }
     assertToolsCallTaskCapability(this._capabilities.tasks?.requests, method, "Server");
   }
-  async _oninitialize(request) {
-    const requestedVersion = request.params.protocolVersion;
-    this._clientCapabilities = request.params.capabilities;
-    this._clientVersion = request.params.clientInfo;
+  async _oninitialize(request2) {
+    const requestedVersion = request2.params.protocolVersion;
+    this._clientCapabilities = request2.params.capabilities;
+    this._clientVersion = request2.params.clientInfo;
     const protocolVersion = SUPPORTED_PROTOCOL_VERSIONS.includes(requestedVersion) ? requestedVersion : LATEST_PROTOCOL_VERSION;
     return {
       protocolVersion,
@@ -16924,10 +16924,6 @@ var StdioServerTransport = class {
   }
 };
 
-// src/lib/channel.ts
-import { execFile } from "node:child_process";
-import fs2 from "node:fs";
-
 // ../node_modules/.pnpm/@collab+protocol@git+https+_c7dcc9f0dea99b9fac262bc302aaed56/node_modules/@collab/protocol/dist/names.js
 var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 var MAX_NAME_CHARS = 64;
@@ -17050,6 +17046,18 @@ function listDaemons() {
     return [];
   }
   return entries.map((entry) => readJson(path2.join(root, entry, "daemon.json"), void 0)).filter((info) => Boolean(info) && isAlive(info.pid)).sort((a, b) => b.startedAt - a.startedAt);
+}
+function mcpRoot() {
+  return path2.join(dataDir(), "mcp");
+}
+function registerMcpServer(info) {
+  writeJsonAtomic(path2.join(mcpRoot(), `${info.pid}.json`), info);
+}
+function unregisterMcpServer(pid) {
+  try {
+    fs.unlinkSync(path2.join(mcpRoot(), `${pid}.json`));
+  } catch {
+  }
 }
 function isAlive(pid) {
   try {
@@ -17204,7 +17212,7 @@ ${renderMessage(message, self, ownSession).trimStart()}`.replace(/<(\/?)(channel
 // src/lib/channel.ts
 var PLUGIN_NAME = "collab-channel";
 var BUSY_STALE_MS = 10 * 60 * 1e3;
-var CONFIRM_WINDOW_MS = 180 * 1e3;
+var CONFIRM_WINDOW_MS = 10 * 60 * 1e3;
 function channelFlag(commandLine, plugin = PLUGIN_NAME) {
   const tokens = (commandLine.match(/"[^"]*"|\S+/g) ?? []).map((t) => t.replace(/^"|"$/g, ""));
   const names = {
@@ -17225,6 +17233,28 @@ function channelFlag(commandLine, plugin = PLUGIN_NAME) {
   }
   return found;
 }
+function isIdle(turn, { now = Date.now(), trustStale = true } = {}) {
+  if (!turn?.busy) return true;
+  return trustStale && now - Math.max(turn.promptAt, turn.activityAt) > BUSY_STALE_MS;
+}
+function pushOutcome(turn, pushedAt, now = Date.now()) {
+  if (turn && turn.promptAt >= pushedAt) return "ambiguous";
+  if (turn && turn.activityAt >= pushedAt) return "confirmed";
+  return now - pushedAt > CONFIRM_WINDOW_MS ? "dropped" : "pending";
+}
+function settlePush(outcome, registered) {
+  if (outcome === "confirmed" || registered) return "delivered";
+  return outcome === "dropped" ? "fallback" : "requeue";
+}
+
+// src/lib/daemon-client.ts
+import { spawn } from "node:child_process";
+import path3 from "node:path";
+import { fileURLToPath } from "node:url";
+
+// src/lib/process.ts
+import { execFile } from "node:child_process";
+import fs2 from "node:fs";
 function readCommandLine(pid) {
   if (process.platform === "linux") {
     try {
@@ -17245,20 +17275,8 @@ function readCommandLine(pid) {
     });
   });
 }
-function isIdle(turn, now = Date.now()) {
-  if (!turn?.busy) return true;
-  return now - Math.max(turn.promptAt, turn.activityAt) > BUSY_STALE_MS;
-}
-function pushOutcome(turn, pushedAt, now = Date.now()) {
-  if (turn && turn.promptAt >= pushedAt) return "ambiguous";
-  if (turn && turn.activityAt >= pushedAt) return "confirmed";
-  return now - pushedAt > CONFIRM_WINDOW_MS ? "dropped" : "pending";
-}
 
 // src/lib/daemon-client.ts
-import { spawn } from "node:child_process";
-import path3 from "node:path";
-import { fileURLToPath } from "node:url";
 var here = path3.dirname(fileURLToPath(import.meta.url));
 function daemonEntry() {
   return path3.join(process.env.CLAUDE_PLUGIN_ROOT ?? path3.join(here, ".."), "dist", "daemon.mjs");
@@ -17305,9 +17323,12 @@ async function ensureDaemon(clientSessionId, timeoutMs = 8e3) {
   throw new DaemonUnavailable("the collab-channel daemon did not start in time");
 }
 async function callDaemon(clientSessionId, path4, options = {}) {
-  const { method = "GET", body, query, timeoutMs = 2e4, autostart = false } = options;
-  const info = autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
+  const info = options.autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
   if (!info) throw new DaemonUnavailable("no collab-channel daemon is running for this session");
+  return request(info, path4, options);
+}
+async function request(info, path4, options) {
+  const { method = "GET", body, query, timeoutMs = 2e4 } = options;
   const url = new URL(`http://127.0.0.1:${info.port}${path4}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== void 0) url.searchParams.set(key, String(value));
@@ -17354,11 +17375,13 @@ function resolveSessionTarget(members2, args) {
 }
 
 // src/lib/version.ts
-var PLUGIN_VERSION = "1.0.0-rc.3";
+var PLUGIN_VERSION = "1.0.0-rc.4";
 
 // src/mcp-server.ts
 process.env.COLLAB_CLAUDE_PID = String(process.ppid);
 process.env.COLLAB_CWD ||= process.env.CLAUDE_PROJECT_DIR || process.cwd();
+registerMcpServer({ pid: process.pid, claudePid: process.ppid, startedAt: Date.now() });
+process.on("exit", () => unregisterMcpServer(process.pid));
 var session = () => resolveSessionId();
 var config2 = readConfig();
 var noArgs = { type: "object", properties: {}, additionalProperties: false };
@@ -17411,9 +17434,12 @@ var TOOLS = [
       const unread = unreadMessages(session());
       const handle = state.handle || me?.handle || state.displayName;
       const others = me?.sessions ? liveSessions(me).filter((s) => s.clientSessionId !== own2) : void 0;
+      const configuredTopic = slug(config2.topic ?? "");
+      const topicNote = configuredTopic && state.topic && configuredTopic !== state.topic ? [`Note: the configured topic is "${configuredTopic}", but this session joined "${flattenForContext(state.topic)}" when it started. It moves there the next time the session starts (a --resume included).`] : [];
       const lines = [
         `Channel: ${state.channel} (${state.connected ? "connected" : "DISCONNECTED \u2014 working from cache"})`,
         `You: ${flattenForContext(handle)}, in topic ${flattenForContext(state.topic)}, session ${flattenForContext(own2)}`,
+        ...topicNote,
         ...others === void 0 ? [] : others.length > 0 ? [`Your other sessions:
 ${others.map((s) => `  - ${renderSession(s, own2)}`).join("\n")}`] : ["Your other sessions: none"],
         peers.length > 0 ? `Members (address them by handle; add session to reach just one of theirs):
@@ -17675,7 +17701,7 @@ var STARTED_AT = Date.now();
 var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 var flag = config2.deliveryMode === "channel" ? channelFlag(await readCommandLine(process.ppid) ?? "") : void 0;
 var NOT_OPTED_IN = `this session was not started with --dangerously-load-development-channels plugin:${PLUGIN_NAME}@<marketplace>`;
-var DROPPED = "Claude Code did not deliver a pushed message, so the channel is not registered (the plugin is not on the channel allowlist, or channels are disabled for the organization)";
+var DROPPED = `a message pushed into this idle session started no turn within ${CONFIRM_WINDOW_MS / 6e4} minutes, so the channel does not look registered (the plugin is not on the channel allowlist, or channels are disabled for the organization)`;
 var CHANNEL_INSTRUCTIONS = [
   "Messages from the collaboration channel \u2014 other developers' Claude Code sessions, addressed to this",
   `session's topic or to its user \u2014 arrive as <channel source="..." collab_seq="..." type="..." urgency="...">`,
@@ -17706,6 +17732,7 @@ async function untilSessionStarted(clientSessionId) {
 }
 async function pushLoop() {
   const dropped = /* @__PURE__ */ new Set();
+  let registered = false;
   let backoff = 1e3;
   for (; ; ) {
     const id = session();
@@ -17721,7 +17748,7 @@ async function pushLoop() {
         timeoutMs: 305e3
       });
       if (!reply.message) continue;
-      while (!isIdle(readTurn(id))) await sleep(500);
+      while (!isIdle(readTurn(id), { trustStale: registered })) await sleep(500);
       const batch = interruptionBatch(id, config2.stopMinUrgency);
       if (batch.length === 0) continue;
       const self = readLocalState(id).self;
@@ -17732,16 +17759,18 @@ async function pushLoop() {
       for (const message of batch) {
         await server.notification({ method: "notifications/claude/channel", params: renderChannelEvent(message, self, id) });
       }
-      let outcome = pushOutcome(readTurn(id), pushedAt);
+      let outcome = registered ? "confirmed" : pushOutcome(readTurn(id), pushedAt);
       while (outcome === "pending") {
         await sleep(1e3);
         outcome = pushOutcome(readTurn(id), pushedAt);
       }
-      if (outcome === "confirmed") {
+      const settled = settlePush(outcome, registered);
+      if (settled === "delivered") {
+        registered = true;
         await callDaemon(id, "/ack", { method: "POST", body: { cursor: highest } }).catch(() => void 0);
       } else {
         if (readCursor(id).delivered === highest) writeCursor(id, { delivered: before });
-        if (outcome === "dropped") {
+        if (settled === "fallback") {
           dropped.add(id);
           setStatus(id, "fallback", DROPPED);
         }
@@ -17764,21 +17793,21 @@ var server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: TOOLS.map(({ name, title, description, inputSchema }) => ({ name, title, description, inputSchema }))
 }));
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const tool = TOOLS.find((t) => t.name === request.params.name);
+server.setRequestHandler(CallToolRequestSchema, async (request2) => {
+  const tool = TOOLS.find((t) => t.name === request2.params.name);
   if (!tool) {
-    return { content: [{ type: "text", text: `Unknown tool: ${request.params.name}` }], isError: true };
+    return { content: [{ type: "text", text: `Unknown tool: ${request2.params.name}` }], isError: true };
   }
   try {
-    return { content: [{ type: "text", text: await tool.handler(request.params.arguments ?? {}) }] };
+    return { content: [{ type: "text", text: await tool.handler(request2.params.arguments ?? {}) }] };
   } catch (err) {
     const message = err instanceof DaemonUnavailable ? `${err.message}. The channel is not connected \u2014 check /config, or run /collab-status to restart it.` : err.message;
     return { content: [{ type: "text", text: `collab-channel error: ${message}` }], isError: true };
   }
 });
 await server.connect(new StdioServerTransport());
+process.stdin.on("end", () => process.exit(0));
 if (config2.deliveryMode === "channel") {
-  process.stdin.on("end", () => process.exit(0));
   if (flag) void pushLoop();
   else setStatus(session(), "fallback", NOT_OPTED_IN);
 }

@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listDaemons, readDaemonInfo, type DaemonInfo } from './state.js';
+import { readCommandLine } from './process.js';
+import { isAlive, listDaemons, readDaemonInfo, type DaemonInfo } from './state.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -94,11 +95,13 @@ export interface CallOptions {
 }
 
 export async function callDaemon<T>(clientSessionId: string, path: string, options: CallOptions = {}): Promise<T> {
-  const { method = 'GET', body, query, timeoutMs = 20_000, autostart = false } = options;
-
-  const info = autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
+  const info = options.autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
   if (!info) throw new DaemonUnavailable('no collab-channel daemon is running for this session');
+  return request<T>(info, path, options);
+}
 
+async function request<T>(info: DaemonInfo, path: string, options: CallOptions): Promise<T> {
+  const { method = 'GET', body, query, timeoutMs = 20_000 } = options;
   const url = new URL(`http://127.0.0.1:${info.port}${path}`);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined) url.searchParams.set(key, String(value));
@@ -117,6 +120,40 @@ export async function callDaemon<T>(clientSessionId: string, path: string, optio
   return parsed as T;
 }
 
-export function stopDaemon(clientSessionId: string): Promise<unknown> {
-  return callDaemon(clientSessionId, '/shutdown', { method: 'POST', timeoutMs: 2_000 });
+/**
+ * Stops a daemon, given its session or its registration. Asked over loopback
+ * first, where the token proves it is ours. Signalled only when it does not
+ * answer and its command line says it is our daemon: the pid of a registration
+ * left behind may belong to some other process by now. With `wait`, returns
+ * once it is gone, so a new one can take the session.
+ */
+export async function stopDaemon(target: string | DaemonInfo, { wait = false } = {}): Promise<void> {
+  const info = typeof target === 'string' ? readDaemonInfo(target) : target;
+  if (!info) return;
+
+  try {
+    await request(info, '/shutdown', { method: 'POST', timeoutMs: 1_000 });
+  } catch {
+    if ((await readCommandLine(info.pid))?.includes('daemon.mjs')) {
+      try { process.kill(info.pid); } catch { /* already gone */ }
+    }
+  }
+
+  const deadline = Date.now() + 3_000;
+  while (wait && isAlive(info.pid) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 50));
+}
+
+/**
+ * The daemons a session start retires. A Claude Code process runs one session
+ * at a time, so another session's daemon under the same process belongs to one
+ * that ended and whose SessionEnd did not get through: that hook has 1.5 s, and
+ * Claude Code can end it before it finishes. And this session's own daemon when
+ * an earlier process started it (a `--resume` in a new process): it would pair
+ * with the wrong MCP server, watch the wrong pid, and keep the topic and
+ * location of that earlier start.
+ */
+export function daemonsToRetire(daemons: DaemonInfo[], current: { clientSessionId: string; claudePid: number }): DaemonInfo[] {
+  return daemons.filter((d) => d.claudePid !== undefined && (d.clientSessionId === current.clientSessionId
+    ? d.claudePid !== current.claudePid
+    : d.claudePid === current.claudePid));
 }
