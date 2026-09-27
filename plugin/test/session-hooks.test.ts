@@ -51,6 +51,12 @@ function sessionStart(source: string) {
 /**
  * Stands in for dist/daemon.mjs: registers like the real one, answers
  * /shutdown, and writes down that it was asked. Needs no network.
+ *
+ * On /shutdown it also removes its own registration, as the real one does
+ * (clearDaemonInfo). That matters here more than it seems: this test process is
+ * the fake's parent and sits blocked in spawnSync while the hook runs, so an
+ * exited fake stays a zombie that `isAlive` still counts as running, and a
+ * registration left behind would simply be reused.
  */
 const FAKE_DAEMON = `
 import fs from 'node:fs';
@@ -59,8 +65,15 @@ import path from 'node:path';
 const id = process.env.COLLAB_CLIENT_SESSION_ID;
 const dir = path.join(process.env.CLAUDE_PLUGIN_DATA, 'v1', 'sessions', id);
 fs.mkdirSync(dir, { recursive: true });
+function unregister() {
+  const file = path.join(dir, 'daemon.json');
+  try { if (JSON.parse(fs.readFileSync(file, 'utf8')).pid === process.pid) fs.unlinkSync(file); } catch {}
+}
 const server = http.createServer((req, res) => {
-  if (req.url === '/shutdown') fs.appendFileSync(path.join(dir, 'shutdowns.log'), process.pid + '\\n');
+  if (req.url === '/shutdown') {
+    fs.appendFileSync(path.join(dir, 'shutdowns.log'), process.pid + '\\n');
+    unregister();
+  }
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end('{"ok":true}');
   if (req.url === '/shutdown') setTimeout(() => process.exit(0), 20);
