@@ -7187,12 +7187,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs3, exportName) {
+    function addFormats(ajv, list, fs4, exportName) {
       var _a3;
       var _b;
       (_a3 = (_b = ajv.opts.code).formats) !== null && _a3 !== void 0 ? _a3 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs3[f]);
+        ajv.addFormat(f, fs4[f]);
     }
     module.exports = exports = formatsPlugin;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -16924,7 +16924,7 @@ var StdioServerTransport = class {
   }
 };
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/names.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/names.js
 var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 var MAX_NAME_CHARS = 64;
 function slug(value, max = MAX_NAME_CHARS) {
@@ -16937,7 +16937,7 @@ function isClientSessionId(value) {
 }
 
 // src/lib/state.ts
-import fs from "node:fs";
+import fs2 from "node:fs";
 import path2 from "node:path";
 
 // src/lib/model.ts
@@ -16946,8 +16946,25 @@ var URGENCY_RANK = { low: 0, normal: 1, high: 2 };
 // src/lib/config.ts
 import { homedir } from "node:os";
 import path from "node:path";
+import fs from "node:fs";
 function dataDir() {
-  return path.join(process.env.CLAUDE_PLUGIN_DATA ?? path.join(homedir(), ".claude", "collab-channel"), "v1");
+  return path.join(dataRoot(), "v1");
+}
+function dataRoot() {
+  if (process.env.CLAUDE_PLUGIN_DATA) return process.env.CLAUDE_PLUGIN_DATA;
+  const installed = installedDataRoots();
+  return installed.find((dir) => fs.existsSync(path.join(dir, "v1"))) ?? installed[0] ?? legacyDataRoot();
+}
+function installedDataRoots() {
+  const root = path.join(homedir(), ".claude", "plugins", "data");
+  try {
+    return fs.readdirSync(root).filter((name) => name.startsWith("collab-channel")).sort().map((name) => path.join(root, name));
+  } catch {
+    return [];
+  }
+}
+function legacyDataRoot() {
+  return path.join(homedir(), ".claude", "collab-channel");
 }
 function sessionsRoot() {
   return path.join(dataDir(), "sessions");
@@ -16971,10 +16988,13 @@ function optional2(value) {
 }
 function readConfig() {
   const e = process.env;
+  const displayName = optional2(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional2(e.COLLAB_DISPLAY_NAME);
   return {
     apiEndpoint: (optional2(e.CLAUDE_PLUGIN_OPTION_API_ENDPOINT) ?? optional2(e.COLLAB_API_ENDPOINT) ?? "").replace(/\/+$/, ""),
     inviteCode: optional2(e.CLAUDE_PLUGIN_OPTION_INVITE_CODE) ?? optional2(e.COLLAB_INVITE_CODE),
-    displayName: optional2(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional2(e.COLLAB_DISPLAY_NAME) ?? e.USERNAME ?? e.USER ?? "unnamed",
+    displayName: displayName ?? e.USERNAME ?? e.USER ?? "unnamed",
+    displayNameSet: displayName !== void 0,
+    optionsVisible: Object.keys(e).some((name) => name.startsWith("CLAUDE_PLUGIN_OPTION_")),
     deliveryMode: oneOf(e.CLAUDE_PLUGIN_OPTION_DELIVERY_MODE, ["stop", "prompt", "manual", "all", "channel"], "stop"),
     stopMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_STOP_MIN_URGENCY, ["low", "normal", "high"], "normal"),
     midTurnMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_MIDTURN_MIN_URGENCY, ["off", "low", "normal", "high"], "high"),
@@ -17007,24 +17027,24 @@ function file(clientSessionId, name) {
 }
 function readJson(filePath, fallback) {
   try {
-    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+    return JSON.parse(fs2.readFileSync(filePath, "utf8"));
   } catch {
     return fallback;
   }
 }
 function writeJsonAtomic(filePath, value) {
-  fs.mkdirSync(path2.dirname(filePath), { recursive: true });
+  fs2.mkdirSync(path2.dirname(filePath), { recursive: true });
   const tmp = `${filePath}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(value, null, 2));
+  fs2.writeFileSync(tmp, JSON.stringify(value, null, 2));
   for (let attempt = 1; ; attempt++) {
     try {
-      fs.renameSync(tmp, filePath);
+      fs2.renameSync(tmp, filePath);
       return;
     } catch (err) {
       const code = err.code ?? "";
       if (attempt >= 5 || !["EPERM", "EACCES", "EBUSY"].includes(code)) {
         try {
-          fs.unlinkSync(tmp);
+          fs2.unlinkSync(tmp);
         } catch {
         }
         throw err;
@@ -17042,7 +17062,7 @@ function listDaemons() {
   const root = sessionsRoot();
   let entries;
   try {
-    entries = fs.readdirSync(root);
+    entries = fs2.readdirSync(root);
   } catch {
     return [];
   }
@@ -17056,7 +17076,7 @@ function registerMcpServer(info) {
 }
 function unregisterMcpServer(pid) {
   try {
-    fs.unlinkSync(path2.join(mcpRoot(), `${pid}.json`));
+    fs2.unlinkSync(path2.join(mcpRoot(), `${pid}.json`));
   } catch {
   }
 }
@@ -17071,7 +17091,7 @@ function isAlive(pid) {
 function readInbox(clientSessionId, sinceSeq = 0) {
   let raw;
   try {
-    raw = fs.readFileSync(file(clientSessionId, "inbox.jsonl"), "utf8");
+    raw = fs2.readFileSync(file(clientSessionId, "inbox.jsonl"), "utf8");
   } catch {
     return [];
   }
@@ -17356,11 +17376,11 @@ import { fileURLToPath } from "node:url";
 
 // src/lib/process.ts
 import { execFile } from "node:child_process";
-import fs2 from "node:fs";
+import fs3 from "node:fs";
 function readCommandLine(pid) {
   if (process.platform === "linux") {
     try {
-      return Promise.resolve(fs2.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0").join(" ").trim());
+      return Promise.resolve(fs3.readFileSync(`/proc/${pid}/cmdline`, "utf8").split("\0").join(" ").trim());
     } catch {
       return Promise.resolve(void 0);
     }
@@ -17408,6 +17428,7 @@ function resolveSessionId() {
 async function ensureDaemon(clientSessionId, timeoutMs = 8e3) {
   const existing = readDaemonInfo(clientSessionId);
   if (existing) return existing;
+  const spawnedAt = Date.now();
   const child = spawn(process.execPath, [daemonEntry()], {
     detached: true,
     stdio: "ignore",
@@ -17421,8 +17442,15 @@ async function ensureDaemon(clientSessionId, timeoutMs = 8e3) {
     await new Promise((r) => setTimeout(r, 120));
     const info = readDaemonInfo(clientSessionId);
     if (info) return info;
+    const failure3 = startFailure(clientSessionId, spawnedAt);
+    if (failure3) throw new DaemonUnavailable(`the collab-channel daemon could not start: ${failure3}`);
   }
-  throw new DaemonUnavailable("the collab-channel daemon did not start in time");
+  const failure2 = startFailure(clientSessionId, spawnedAt);
+  throw new DaemonUnavailable(failure2 ? `the collab-channel daemon could not start: ${failure2}` : "the collab-channel daemon did not start in time");
+}
+function startFailure(clientSessionId, since) {
+  const state = readLocalState(clientSessionId);
+  return state.failedAt && state.failedAt >= since && state.lastError ? state.lastError : void 0;
 }
 async function callDaemon(clientSessionId, path4, options = {}) {
   const info = options.autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
@@ -17541,7 +17569,7 @@ function resolveSessionTarget(members2, args) {
 }
 
 // src/lib/version.ts
-var PLUGIN_VERSION = "1.0.0-rc.6";
+var PLUGIN_VERSION = "1.0.0-rc.7";
 
 // src/mcp-server.ts
 process.env.COLLAB_CLAUDE_PID = String(process.ppid);

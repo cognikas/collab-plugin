@@ -154,6 +154,16 @@ function channelNotice(clientSessionId: string, { always = false } = {}): string
   return `[collab-channel] delivery: stop — channel mode is configured, but ${status.reason}.`;
 }
 
+/**
+ * An invite stays in /config after the plugin redeemed it, where it only
+ * sits in every plugin process's environment. The plugin cannot edit /config.
+ */
+function spentInviteNotice(config: PluginConfig): string | undefined {
+  if (!config.inviteCode || !resolveCredentials(config)?.secret) return undefined;
+  return '[collab-channel] invite_code is still set in /config, but it was already redeemed: tell the user they can '
+    + 'clear it there.';
+}
+
 /** Marks messages delivered, both locally and on the server. */
 function markDelivered(clientSessionId: string, highestSeq: number, extra: Partial<{ lastBlockAt: number }> = {}): void {
   if (highestSeq <= 0) return;
@@ -220,8 +230,11 @@ async function onSessionStart(
   const summary = renderChannelSummary(clientSessionId, 'unread');
   if (!summary) return;
 
-  const notice = tracksTurns ? channelNotice(clientSessionId, { always: true }) : undefined;
-  emit('SessionStart', { additionalContext: notice ? `${summary.text}\n${notice}` : summary.text });
+  const notices = [
+    tracksTurns ? channelNotice(clientSessionId, { always: true }) : undefined,
+    spentInviteNotice(config),
+  ].filter((line): line is string => Boolean(line));
+  emit('SessionStart', { additionalContext: [summary.text, ...notices].join('\n') });
   // Injecting them IS delivering them. Without this the Stop hook interrupts at
   // the end of the first turn with messages already shown at startup, which
   // costs a turn and teaches you to ignore the interruption.

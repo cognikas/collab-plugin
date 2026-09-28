@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readCommandLine } from './process.js';
-import { isAlive, listDaemons, readDaemonInfo, type DaemonInfo } from './state.js';
+import { isAlive, listDaemons, readDaemonInfo, readLocalState, type DaemonInfo } from './state.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -67,6 +67,7 @@ export async function ensureDaemon(clientSessionId: string, timeoutMs = 8_000): 
   const existing = readDaemonInfo(clientSessionId);
   if (existing) return existing;
 
+  const spawnedAt = Date.now();
   const child = spawn(process.execPath, [daemonEntry()], {
     detached: true,
     stdio: 'ignore',
@@ -81,8 +82,20 @@ export async function ensureDaemon(clientSessionId: string, timeoutMs = 8_000): 
     await new Promise((r) => setTimeout(r, 120));
     const info = readDaemonInfo(clientSessionId);
     if (info) return info;
+    // A daemon that died says why in the session's state; no point waiting out the clock.
+    const failure = startFailure(clientSessionId, spawnedAt);
+    if (failure) throw new DaemonUnavailable(`the collab-channel daemon could not start: ${failure}`);
   }
-  throw new DaemonUnavailable('the collab-channel daemon did not start in time');
+  const failure = startFailure(clientSessionId, spawnedAt);
+  throw new DaemonUnavailable(failure
+    ? `the collab-channel daemon could not start: ${failure}`
+    : 'the collab-channel daemon did not start in time');
+}
+
+/** Why the daemon started at `since` died, when it did. An older failure is not this one's. */
+function startFailure(clientSessionId: string, since: number): string | undefined {
+  const state = readLocalState(clientSessionId);
+  return state.failedAt && state.failedAt >= since && state.lastError ? state.lastError : undefined;
 }
 
 export interface CallOptions {

@@ -4,4 +4,4 @@
  * scripts/version.mjs, never by hand: plugin/test/versions.test.ts checks it
  * against plugin.json, the marketplace entry and both package.json files.
  */
-export const PLUGIN_VERSION = '1.0.0-rc.6';
+export const PLUGIN_VERSION = '1.0.0-rc.7';

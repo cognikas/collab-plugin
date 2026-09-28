@@ -102,8 +102,16 @@ Luego `/config` → **Collaboration Channel**, y rellena:
 | `display_name` | cómo quieres que te vean los demás; de aquí sale tu handle, que tiene que estar libre |
 | `topic` | opcional: el tema de tus sesiones. Vacío, el nombre del repositorio |
 
-Reinicia la sesión. En el arranque se canjea la invitación sola y el canal queda conectado.
-Comprueba con `/collab-join`, que además diagnostica si algo falta.
+Los tres primeros campos son obligatorios: sin ellos el plugin no arranca. Antes de instalar,
+actualiza Claude Code (`claude update`): una versión vieja rechaza el plugin con
+`Unrecognized key: "options"`.
+
+Cierra Claude Code por completo y vuelve a abrirlo; `/reload-plugins` no basta, porque el servidor
+MCP del plugin sigue con la configuración anterior. En el arranque el plugin canjea la invitación
+solo y el canal queda conectado. Compruébalo con `/collab-status`; si algo falla, `/collab-join`
+diagnostica qué. No canjees la invitación a mano con `cli.mjs join`: el plugin lo hace con los
+valores de `/config`, que un comando corrido desde la herramienta Bash no ve. Una vez conectado,
+borra `invite_code` de `/config`, porque ya está gastado.
 
 Aparte de Node no hace falta instalar nada: los bundles vienen compilados en el repositorio, así que
 no hay `npm install` ni dependencias que bajar. La 1.0 guarda sus credenciales y su estado en una
@@ -167,7 +175,7 @@ como `stop`. Un push descartado no se pierde; en el caso dudoso un mensaje puede
 | `/collab-send <texto>` | Mandar un mensaje a un tema, a una persona, o a una persona en un tema |
 | `/collab-done [qué]` | Anunciar trabajo terminado — el reemplazo del handoff |
 | `/collab-claim [rutas]` | Reservar archivos antes de un refactor |
-| `/collab-join` | Unirse al canal, o diagnosticar por qué no conecta |
+| `/collab-join` | Diagnosticar por qué la sesión no está en el canal |
 
 ### Statusline
 

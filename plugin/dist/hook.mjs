@@ -1,7 +1,7 @@
 import { createRequire as __createRequire } from 'node:module';
 const require = __createRequire(import.meta.url);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/names.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/names.js
 var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 function isClientSessionId(value) {
   return typeof value === "string" && CLIENT_SESSION_ID.test(value);
@@ -20,7 +20,23 @@ import { homedir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 function dataDir() {
-  return path.join(process.env.CLAUDE_PLUGIN_DATA ?? path.join(homedir(), ".claude", "collab-channel"), "v1");
+  return path.join(dataRoot(), "v1");
+}
+function dataRoot() {
+  if (process.env.CLAUDE_PLUGIN_DATA) return process.env.CLAUDE_PLUGIN_DATA;
+  const installed = installedDataRoots();
+  return installed.find((dir) => fs.existsSync(path.join(dir, "v1"))) ?? installed[0] ?? legacyDataRoot();
+}
+function installedDataRoots() {
+  const root = path.join(homedir(), ".claude", "plugins", "data");
+  try {
+    return fs.readdirSync(root).filter((name) => name.startsWith("collab-channel")).sort().map((name) => path.join(root, name));
+  } catch {
+    return [];
+  }
+}
+function legacyDataRoot() {
+  return path.join(homedir(), ".claude", "collab-channel");
 }
 function credentialsPath() {
   return path.join(dataDir(), "credentials.json");
@@ -47,10 +63,13 @@ function optional(value) {
 }
 function readConfig() {
   const e = process.env;
+  const displayName = optional(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional(e.COLLAB_DISPLAY_NAME);
   return {
     apiEndpoint: (optional(e.CLAUDE_PLUGIN_OPTION_API_ENDPOINT) ?? optional(e.COLLAB_API_ENDPOINT) ?? "").replace(/\/+$/, ""),
     inviteCode: optional(e.CLAUDE_PLUGIN_OPTION_INVITE_CODE) ?? optional(e.COLLAB_INVITE_CODE),
-    displayName: optional(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional(e.COLLAB_DISPLAY_NAME) ?? e.USERNAME ?? e.USER ?? "unnamed",
+    displayName: displayName ?? e.USERNAME ?? e.USER ?? "unnamed",
+    displayNameSet: displayName !== void 0,
+    optionsVisible: Object.keys(e).some((name) => name.startsWith("CLAUDE_PLUGIN_OPTION_")),
     deliveryMode: oneOf(e.CLAUDE_PLUGIN_OPTION_DELIVERY_MODE, ["stop", "prompt", "manual", "all", "channel"], "stop"),
     stopMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_STOP_MIN_URGENCY, ["low", "normal", "high"], "normal"),
     midTurnMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_MIDTURN_MIN_URGENCY, ["off", "low", "normal", "high"], "high"),
@@ -473,6 +492,7 @@ var DaemonUnavailable = class extends Error {
 async function ensureDaemon(clientSessionId, timeoutMs = 8e3) {
   const existing = readDaemonInfo(clientSessionId);
   if (existing) return existing;
+  const spawnedAt = Date.now();
   const child = spawn(process.execPath, [daemonEntry()], {
     detached: true,
     stdio: "ignore",
@@ -486,8 +506,15 @@ async function ensureDaemon(clientSessionId, timeoutMs = 8e3) {
     await new Promise((r) => setTimeout(r, 120));
     const info = readDaemonInfo(clientSessionId);
     if (info) return info;
+    const failure2 = startFailure(clientSessionId, spawnedAt);
+    if (failure2) throw new DaemonUnavailable(`the collab-channel daemon could not start: ${failure2}`);
   }
-  throw new DaemonUnavailable("the collab-channel daemon did not start in time");
+  const failure = startFailure(clientSessionId, spawnedAt);
+  throw new DaemonUnavailable(failure ? `the collab-channel daemon could not start: ${failure}` : "the collab-channel daemon did not start in time");
+}
+function startFailure(clientSessionId, since) {
+  const state = readLocalState(clientSessionId);
+  return state.failedAt && state.failedAt >= since && state.lastError ? state.lastError : void 0;
 }
 async function callDaemon(clientSessionId, path4, options = {}) {
   const info = options.autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
@@ -601,6 +628,10 @@ function channelNotice(clientSessionId, { always = false } = {}) {
   writeChannelStatus(clientSessionId, { ...status, announced: true });
   return `[collab-channel] delivery: stop \u2014 channel mode is configured, but ${status.reason}.`;
 }
+function spentInviteNotice(config) {
+  if (!config.inviteCode || !resolveCredentials(config)?.secret) return void 0;
+  return "[collab-channel] invite_code is still set in /config, but it was already redeemed: tell the user they can clear it there.";
+}
 function markDelivered(clientSessionId, highestSeq, extra = {}) {
   if (highestSeq <= 0) return;
   writeCursor(clientSessionId, { delivered: highestSeq, ...extra });
@@ -637,9 +668,11 @@ async function onSessionStart(input, config, clientSessionId, tracksTurns) {
   }
   const summary = renderChannelSummary(clientSessionId, "unread");
   if (!summary) return;
-  const notice = tracksTurns ? channelNotice(clientSessionId, { always: true }) : void 0;
-  emit("SessionStart", { additionalContext: notice ? `${summary.text}
-${notice}` : summary.text });
+  const notices = [
+    tracksTurns ? channelNotice(clientSessionId, { always: true }) : void 0,
+    spentInviteNotice(config)
+  ].filter((line) => Boolean(line));
+  emit("SessionStart", { additionalContext: [summary.text, ...notices].join("\n") });
   markDelivered(clientSessionId, summary.highestSeq);
 }
 function onStop(config, clientSessionId, tracksTurns) {

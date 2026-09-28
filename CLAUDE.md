@@ -123,6 +123,13 @@ files and `pnpm install`.
   now, so the daemon reads them again after every hello and every notice (debounced), and takes its
   own changes from their answers (`applyTask`). Until that read `tasksStale` is set, and the session
   start shows no tasks rather than old ones.
+- **The CLI runs outside the plugin.** From a session's Bash tool it gets neither `CLAUDE_PLUGIN_DATA`
+  nor the `/config` options. `dataDir()` falls back to the plugin's own folder under
+  `~/.claude/plugins/data/collab-channel-*`, never a folder of its own: credentials written anywhere
+  else leave the plugin redeeming a spent invite. For the same reason `cli.mjs join` refuses without
+  visible settings, never takes the OS username as the display name, and `/collab-join` only runs
+  `doctor`. The plugin redeems the invite at session start. A daemon that dies before serving writes
+  `lastError` and `failedAt`, which `ensureDaemon` reports instead of only timing out.
 - **Compaction** runs SessionStart again with `source: "compact"`, which is where the channel summary
   goes back in. PostCompact output cannot carry context, so it is not registered.
 - `flattenForContext` in `src/lib/state.ts` and the tests hold escape sequences for invisible

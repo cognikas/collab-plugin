@@ -90,6 +90,8 @@ export interface LocalState {
   /** Set when the server refused this client for good (unsupported protocol,
    *  revoked member): the daemon stopped reconnecting, and says why. */
   fatal?: string;
+  /** When a daemon last died before it could serve the session; `lastError` says why. */
+  failedAt?: number;
   /** The backend release and the protocol version agreed in the last hello. */
   server?: string;
 }

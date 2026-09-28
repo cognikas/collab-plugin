@@ -9,8 +9,8 @@
  * command of cli.mjs. Prints nothing when the session is not on the channel.
  */
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { installedDataRoots } from './lib/config.js';
 import { renderStatusLine } from './lib/render.js';
 import { readLocalState, unreadMessages } from './lib/state.js';
 
@@ -31,13 +31,7 @@ async function readStdin(): Promise<{ session_id?: unknown }> {
  * session is the one to read.
  */
 function dataRootFor(clientSessionId: string): string | undefined {
-  const pluginData = path.join(os.homedir(), '.claude', 'plugins', 'data');
-  let installed: string[] = [];
-  try {
-    installed = fs.readdirSync(pluginData).filter((name) => name.startsWith('collab-channel'))
-      .map((name) => path.join(pluginData, name));
-  } catch { /* no plugin data at all */ }
-  const candidates = [process.env.CLAUDE_PLUGIN_DATA, ...installed].filter((dir): dir is string => Boolean(dir));
+  const candidates = [process.env.CLAUDE_PLUGIN_DATA, ...installedDataRoots()].filter((dir): dir is string => Boolean(dir));
   return candidates.find((dir) => fs.existsSync(path.join(dir, 'v1', 'sessions', clientSessionId, 'state.json')));
 }
 
