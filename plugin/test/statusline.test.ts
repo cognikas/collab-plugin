@@ -28,8 +28,9 @@ function session(id: string, state: object, marketplace = 'cognikas'): void {
 function run(input: string, env: NodeJS.ProcessEnv = {}) {
   return spawnSync(process.execPath, [statusline], {
     input, encoding: 'utf8', timeout: 10_000,
-    // As from a status line script: HOME is the user's, and CLAUDE_PLUGIN_DATA is unset or some other plugin's.
-    env: { PATH: process.env.PATH, HOME: home, ...env },
+    // As from a status line script: the home is the user's, and CLAUDE_PLUGIN_DATA is unset or some other
+    // plugin's. os.homedir() reads USERPROFILE on Windows and HOME elsewhere, so both point at the fake one.
+    env: { PATH: process.env.PATH, HOME: home, USERPROFILE: home, ...env },
   });
 }
 
