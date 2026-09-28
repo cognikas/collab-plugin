@@ -19,6 +19,7 @@ const ENTRIES = [
   { in: 'src/hook.ts', out: 'hook' },
   { in: 'src/mcp-server.ts', out: 'mcp-server' },
   { in: 'src/cli.ts', out: 'cli' },
+  { in: 'src/statusline.ts', out: 'statusline' },
 ];
 
 rmSync(outdir, { recursive: true, force: true });

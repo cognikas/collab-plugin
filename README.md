@@ -32,6 +32,8 @@ son compatibles: 1.0 necesita el endpoint y una invitación del backend nuevo.
 | Ana va a refactorizar `src/api/**` | Lo reserva con `collab_claim`; a Bruno se le pide confirmación antes de editar ahí |
 | Bruno no puede seguir sin el endpoint | `collab_wait` bloquea su turno hasta que llegue el aviso, sin polling |
 | El trabajo del release tiene varias partes | Ana las pone en una lista con `collab_task_add`; cada sesión toma una con `collab_task_update`, reporta avance y la cierra, y el tema se entera de cada cierre |
+| Bruno quiere saber en qué anda cada uno | `collab_status` muestra las tareas en curso por persona y sesión, con avance y última nota; el arranque de sesión también, y su statusline dice `collab ● ana rc5#2 40%` |
+| Ana le contesta a Bruno | `replyTo` con el número del mensaje: la respuesta vuelve a la sesión que preguntó, no a todas las de Bruno |
 | Nadie más está conectado | El mensaje sale también como aviso offline (email opcional, vía SNS) |
 
 ## Temas y destinatarios
@@ -44,9 +46,16 @@ Todo mensaje dice para quién es. No hay difusión a todo el canal:
 
 | Destinatario | Llega a |
 |---|---|
+| `replyTo: 58` | la sesión que escribió el #58; si ya no está conectada, esa persona en el tema del #58 |
 | `topic: "masterlive"` | todas las sesiones en ese tema, de cualquier persona, menos las tuyas |
-| `user: "willy"` | todas las sesiones de willy, en cualquier tema |
+| `user: "willy"` | willy en tu tema, si tiene una sesión ahí; si no, todas sus sesiones, y la confirmación lo dice |
+| `user: "willy", anyTopic: true` | todas las sesiones de willy, en cualquier tema |
 | `user: "willy", topic: "masterlive"` | solo las sesiones de willy en ese tema |
+| `session: "<id>"` | solo esa sesión, que tiene que estar conectada |
+
+Para contestar un mensaje se usa `replyTo` con su número: la respuesta vuelve a la sesión que
+preguntó y no cae en las otras sesiones de esa persona. La confirmación de cada envío dice a qué
+sesiones y temas llegó (`→ carlos in collab-global: session <id>`).
 
 A una persona se la nombra por su **handle**, que sale de su nombre visible (`prueba (fake peer)` →
 `prueba-fake-peer`) y es único en el canal. `/collab-status` muestra el tuyo, tu tema, y en qué temas
@@ -120,6 +129,15 @@ Un mensaje urgente no espera al final del turno: en los modos `stop`, `all` y `c
 sin leer con urgencia al menos `midturn_min_urgency` (por defecto `high`), entra en el contexto justo
 después de la siguiente llamada a herramienta. `off` lo desactiva.
 
+Al arrancar, la sesión recibe lo que quedó sin leer, del más viejo al más nuevo, sin perder ninguno:
+
+- **Completos, hasta 10:** los de este tema y los dirigidos a esta sesión.
+- **Solo por número:** lo que llegó a todas tus sesiones desde un tema donde tienes otra sesión
+  abierta, porque esa sesión lo recibe completo. `collab_inbox` con `seqs` muestra cualquiera aquí.
+- **El resto, después:** si no entra todo, solo se marca como leído lo que se mostró, y lo demás
+  llega con la siguiente interrupción o con `collab_inbox`, que también lee del más viejo al más
+  nuevo.
+
 ### Modo `channel` (research preview)
 
 Usa los [channels](https://code.claude.com/docs/en/channels) de Claude Code: el servidor MCP del
@@ -150,6 +168,26 @@ como `stop`. Un push descartado no se pierde; en el caso dudoso un mensaje puede
 | `/collab-done [qué]` | Anunciar trabajo terminado — el reemplazo del handoff |
 | `/collab-claim [rutas]` | Reservar archivos antes de un refactor |
 | `/collab-join` | Unirse al canal, o diagnosticar por qué no conecta |
+
+### Statusline
+
+`plugin/dist/statusline.mjs` imprime una línea para la statusline de Claude Code: si el canal está
+conectado, qué tienen en curso los demás en tu tema (hasta dos tareas) y cuántos mensajes no leíste.
+
+```
+collab ● carlos rc5#2 40% · 2 unread
+```
+
+Lee el JSON de la sesión por stdin, como cualquier comando de statusline, y solo mira los archivos
+que el daemon deja en disco: no va a la red y tarda unos 30 ms. Si la sesión no está en el canal, no
+imprime nada. Para sumarla a tu script de statusline:
+
+```bash
+input=$(cat)   # el JSON que Claude Code le pasa a tu script
+collab_line=$(ls -td ~/.claude/plugins/cache/*/collab-channel/*/dist/statusline.mjs 2>/dev/null | head -1)
+collab=$([ -n "$collab_line" ] && printf '%s' "$input" | node "$collab_line" 2>/dev/null)
+# ... y agrega "$collab" a lo que tu script ya imprime
+```
 
 ## Desarrollo
 

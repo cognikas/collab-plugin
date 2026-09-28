@@ -9,12 +9,12 @@ import { isChannelPrompt } from './lib/channel.js';
 import { gitBranch, readConfig, resolveCredentials, setEnv, type PluginConfig } from './lib/config.js';
 import { callDaemon, daemonsToRetire, DaemonUnavailable, ensureDaemon, stopDaemon } from './lib/daemon-client.js';
 import {
-  claimConflictReason, liveSessions, renderClaim, renderMemberLines, renderMessage, renderSession, renderTaskListsLine,
-  UNTRUSTED_NOTE,
+  claimConflictReason, liveSessions, planBacklog, renderBacklog, renderClaim, renderInProgressBrief, renderMemberLines,
+  renderMessage, renderSession, renderTaskListsLine, UNTRUSTED_NOTE,
 } from './lib/render.js';
 import {
   flattenForContext, interruptionBatch, listDaemons, pathMatchesClaim, readChannelStatus, readCursor, readLocalState,
-  recentMessages, unreadMessages, writeChannelStatus, writeCursor, writeTurn,
+  recentMessages, unreadMessages, writeChannelStatus, writeCursor, writeTurn, type LocalState,
 } from './lib/state.js';
 
 /** Two Stop hooks can fire back to back; never interrupt twice in a row. */
@@ -82,9 +82,10 @@ function renderChannelSummary(
   lines.push(peers.length > 0
     ? ['Members:', ...peers.flatMap((m) => renderMemberLines(m, state.self, clientSessionId))].join('\n')
     : 'Members: nobody else has joined this channel yet');
-  lines.push(`Address every collab_send and collab_done: topic "${topic}" reaches the others in this topic, `
-    + 'user "<handle>" every session of that member, both that member\'s sessions in that topic; '
-    + 'add session "<id>" to reach just that one session.');
+  lines.push('Address every collab_send and collab_done: replyTo <seq> answers exactly the session that wrote that '
+    + `message; topic "${topic}" reaches the others in this topic; user "<handle>" that member in this topic when they `
+    + 'are in it, otherwise every session of theirs (anyTopic: true for all of them on purpose); user and topic, that '
+    + 'member\'s sessions in that topic; session "<id>" just that one session.');
 
   if (state.claims.length > 0) {
     lines.push('Files claimed in this topic right now:');
@@ -103,22 +104,37 @@ function renderChannelSummary(
   if (taskLists.length > 0) {
     lines.push(`Task lists in this topic with open tasks: ${renderTaskListsLine(taskLists.slice(0, 8))}. `
       + 'collab_tasks shows them; check out a task with collab_task_update before starting on it.');
+    // Tasks read before this session's hello could say someone still has what they finished since.
+    const doing = state.tasksStale ? [] : renderInProgressBrief(state.tasks ?? [], state.self, clientSessionId);
+    if (doing.length > 0) lines.push('In progress in this topic:', ...doing);
   }
 
   const messages = mode === 'unread' ? unreadMessages(clientSessionId) : recentMessages(clientSessionId, 10);
+  const backlog = planBacklog(messages, {
+    self: state.self, ownSession: clientSessionId, topic: state.topic, members: state.members,
+  });
 
   if (messages.length > 0) {
+    const shown = messages.length - backlog.remaining;
     lines.push(mode === 'unread'
-      ? `${messages.length} unread message(s). ${UNTRUSTED_NOTE}`
+      ? `${messages.length} unread message(s)${backlog.remaining > 0 ? `, the oldest ${shown} below` : ''}. ${UNTRUSTED_NOTE}`
       : `Last ${messages.length} message(s) on the channel, re-shown because compaction dropped them. `
         + `You have probably seen these already. ${UNTRUSTED_NOTE}`);
-    for (const message of messages.slice(-10)) lines.push(renderMessage(message, state.self, clientSessionId));
+    lines.push(...renderBacklog(backlog, state.self, clientSessionId));
   }
 
-  return {
-    text: lines.join('\n'),
-    highestSeq: messages.length > 0 ? Math.max(...messages.map((m) => m.seq)) : 0,
-  };
+  // Only what was shown, in full or by number, counts as delivered: the rest
+  // stays unread for the Stop hook or collab_inbox.
+  return { text: lines.join('\n'), highestSeq: backlog.throughSeq };
+}
+
+/**
+ * Connected and, when someone has a task in progress, with the topic's tasks
+ * read since the hello, so the summary says who is doing what as of now.
+ */
+function readyToSummarize(state: LocalState): boolean {
+  if (!state.connected) return false;
+  return !(state.tasksStale && state.taskLists.some((list) => list.inProgress > 0));
 }
 
 /**
@@ -182,7 +198,7 @@ async function onSessionStart(
     // Wait for the socket rather than guessing a delay: a cold Lambda takes a
     // couple of seconds, a warm one is immediate.
     const deadline = Date.now() + 4_000;
-    while (Date.now() < deadline && !readLocalState(clientSessionId).connected) {
+    while (Date.now() < deadline && !readyToSummarize(readLocalState(clientSessionId))) {
       await new Promise((r) => setTimeout(r, 150));
     }
   } catch (err) {
@@ -244,8 +260,8 @@ function onStop(config: PluginConfig, clientSessionId: string, tracksTurns: bool
       ...unread.map((message) => renderMessage(message, state.self, clientSessionId)),
       '',
       'Take them into account now: answer questions, pick up work that was just unblocked, '
-      + 'or acknowledge with the collab_send tool, addressed back to the sender (with its session to reach only the '
-      + 'session that wrote). If nothing is needed, say so briefly and stop.',
+      + 'or acknowledge with the collab_send tool, with replyTo set to the message\'s number so the answer goes back '
+      + 'to exactly the session that wrote it. If nothing is needed, say so briefly and stop.',
     ].join('\n'),
   );
   // Exit code 2 is what blocks the stop and feeds stderr back to the model.

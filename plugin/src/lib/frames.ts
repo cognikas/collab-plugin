@@ -104,6 +104,8 @@ export function handleServerFrame(frame: ServerFrame, ctx: FrameContext): boolea
       writeLocalState(id, {
         connected: true, channel: state.channel, self: state.self, handle: state.handle, topic: state.topic,
         members: state.members, claims: state.claims, contextIndex: state.contextIndex, taskLists: state.taskLists,
+        // The hello carries the lists' counts but not the tasks: the daemon reads them next.
+        tasksStale: true,
         latestSeq: state.latestSeq, lastError: undefined, fatal: undefined,
         server: `${event.value.serverVersion || 'unknown'} (protocol ${protocol})`,
       });

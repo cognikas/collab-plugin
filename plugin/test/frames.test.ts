@@ -124,6 +124,12 @@ describe('hello', () => {
     expect(readCursor('s1').delivered).toBe(0);
   });
 
+  it('marks the cached tasks as behind, since a hello brings the lists\' counts but not the tasks', () => {
+    writeLocalState('s1', { tasksStale: false });
+    handleServerFrame(frame(helloJson), context().ctx);
+    expect(readLocalState('s1').tasksStale).toBe(true);
+  });
+
   it('clears an earlier error once the server says hello', () => {
     writeLocalState('s1', { lastError: 'ticket failed', fatal: 'old' });
     handleServerFrame(frame(helloJson), context().ctx);

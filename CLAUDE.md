@@ -27,7 +27,8 @@ pnpm --filter @collab/plugin exec vitest run -t "<test name>"
 node scripts/version.mjs <x.y.z[-pre]>
 ```
 
-`test/stop-guard.test.ts` runs the built `plugin/dist/hook.mjs`, so build before testing.
+`test/stop-guard.test.ts`, `test/session-hooks.test.ts` and `test/statusline.test.ts` run the built
+bundles in `plugin/dist/`, so build before testing.
 
 Against a deployed 1.0 backend only (outward-facing: confirm with the user first):
 
@@ -88,6 +89,13 @@ files and `pnpm install`.
   `test/stop-guard.test.ts` asserts two consecutive `Stop`s interrupt exactly once.
 - **One high-water-mark cursor.** Urgency decides *whether* to interrupt, never *what* is shown:
   every interruption delivers all unread messages up to the seq it acks.
+- **A delivery marks delivered only what it showed.** The session start and `collab_inbox` go oldest
+  first and ack through the last message shown, in full or by number (`planBacklog`, `unreadPage`).
+  Showing the newest and acking everything is how the startup summary once lost messages.
+- **`user` alone is resolved in the client** (`resolveRecipient` in `src/lib/sessions.ts`): that
+  member in this session's topic when they have a live session there, otherwise every session of
+  theirs, with a note; `anyTopic` asks for all of them, and `replyTo` answers the session that wrote.
+  The server's visibility rule is untouched.
 - **Peer text is untrusted input to the model.** Everything rendered is prefixed with
   `UNTRUSTED_NOTE` and flattened with `flattenForContext` (newlines, Unicode separators, controls,
   bidi overrides); channel events also neutralize `<channel`. Regression tests cover this.
@@ -108,9 +116,13 @@ files and `pnpm install`.
   server of ours for 3 minutes (`v1/mcp/`). `clearDaemonInfo` only removes the caller's own
   registration.
 - **Task lists** are read with `ListTasks` over HTTP only, and written like any request. `state.json`
-  keeps only the topic's lists with open tasks, from hello, from TASK notices (their payload carries
+  keeps the topic's lists with open tasks, from hello, from TASK notices (their payload carries
   the list's counts) and from this session's own results, since a session gets no notice of its own
-  change (`applyTaskList`, which never rolls a list back).
+  change (`applyTaskList`, which never rolls a list back). It also keeps the topic's open tasks
+  (`tasks`), for who-is-doing-what without the network: a TASK notice does not say who has a task
+  now, so the daemon reads them again after every hello and every notice (debounced), and takes its
+  own changes from their answers (`applyTask`). Until that read `tasksStale` is set, and the session
+  start shows no tasks rather than old ones.
 - **Compaction** runs SessionStart again with `source: "compact"`, which is where the channel summary
   goes back in. PostCompact output cannot carry context, so it is not registered.
 - `flattenForContext` in `src/lib/state.ts` and the tests hold escape sequences for invisible

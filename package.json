@@ -1,6 +1,6 @@
 {
   "name": "collab-plugin",
-  "version": "1.0.0-rc.5",
+  "version": "1.0.0-rc.6",
   "private": true,
   "type": "module",
   "description": "Plugin collab-channel de Claude Code y marketplace cognikas",

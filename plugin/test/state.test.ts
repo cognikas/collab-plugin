@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { Message } from '../src/lib/model.js';
+import type { Message, Task } from '../src/lib/model.js';
 
 let tempDir: string;
 
@@ -247,6 +247,65 @@ describe('recent vs unread', () => {
     appendInbox('s1', message({ seq: 2, fromMemberId: 'PEER' }));
 
     expect(recentMessages('s1', 10).map((m) => m.seq)).toEqual([1, 2]);
+  });
+});
+
+describe('reading the inbox by page and by number', () => {
+  it('pages unread messages oldest first and says how many are left', async () => {
+    const { appendInbox, writeCursor, unreadPage } = await stateModule();
+    for (let seq = 1; seq <= 5; seq++) appendInbox('s1', message({ seq }));
+    writeCursor('s1', { delivered: 1 });
+
+    const { page, rest } = unreadPage('s1', 2);
+    expect(page.map((m) => m.seq)).toEqual([2, 3]);
+    expect(rest).toBe(2);
+    expect(unreadPage('s1', Number.NaN).page).toHaveLength(4);
+  });
+
+  it('finds given messages whether read or not, and names the seqs it does not hold', async () => {
+    const { appendInbox, writeCursor, messagesBySeq } = await stateModule();
+    for (const seq of [3, 4, 7]) appendInbox('s1', message({ seq }));
+    writeCursor('s1', { delivered: 7 });
+
+    const { found, missing } = messagesBySeq('s1', [7, 3, 3, 9, 'x', -1]);
+    expect(found.map((m) => m.seq)).toEqual([3, 7]);
+    expect(missing).toEqual([9]);
+  });
+});
+
+describe('the cached tasks of the topic', () => {
+  const task = (overrides: Partial<Task> = {}): Task => ({
+    list: 'rc5', topic: 't1', number: 1, title: 'x', status: 'open', createdByMemberId: 'PEER', createdByName: 'ana',
+    createdAt: 0, progressCount: 0, updatedAt: 10, ...overrides,
+  });
+  const keys = (tasks: Task[] | undefined) => (tasks ?? []).map((t) => `${t.list}#${t.number}`).sort();
+
+  it('replace every list\'s, or one list\'s, from a read, keeping only open ones of this topic', async () => {
+    const { applyTasks, readLocalState, writeLocalState } = await stateModule();
+    writeLocalState('s1', { topic: 't1', tasksStale: true });
+    applyTasks('s1', [
+      task({ number: 1 }), task({ number: 2, status: 'in_progress' }), task({ number: 3, status: 'done' }),
+      task({ list: 'ux', number: 1 }), task({ list: 'zz', topic: 'other' }),
+    ]);
+    expect(keys(readLocalState('s1').tasks)).toEqual(['rc5#1', 'rc5#2', 'ux#1']);
+    expect(readLocalState('s1').tasksStale).toBe(false);
+
+    applyTasks('s1', [task({ list: 'ux', number: 2 })], 'ux');
+    expect(keys(readLocalState('s1').tasks)).toEqual(['rc5#1', 'rc5#2', 'ux#2']);
+  });
+
+  it('take this session\'s own change, drop a finished task, and ignore an older answer or another topic', async () => {
+    const { applyTask, readLocalState, writeLocalState } = await stateModule();
+    writeLocalState('s1', { topic: 't1', tasks: [task({ number: 1, updatedAt: 20 })] });
+
+    applyTask('s1', task({ number: 1, status: 'in_progress', updatedAt: 10 }));
+    expect(readLocalState('s1').tasks?.[0]?.status).toBe('open');
+    applyTask('s1', task({ number: 1, status: 'in_progress', updatedAt: 30 }));
+    expect(readLocalState('s1').tasks?.[0]?.status).toBe('in_progress');
+    applyTask('s1', task({ number: 2, topic: 'other' }));
+    expect(keys(readLocalState('s1').tasks)).toEqual(['rc5#1']);
+    applyTask('s1', task({ number: 1, status: 'done', updatedAt: 40 }));
+    expect(readLocalState('s1').tasks).toEqual([]);
   });
 });
 

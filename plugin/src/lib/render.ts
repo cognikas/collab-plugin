@@ -1,6 +1,6 @@
-import { isClientSessionId } from '@collab/protocol';
+import { isClientSessionId, slug } from '@collab/protocol';
 import type { Claim, Member, MemberSession, Message, Task, TaskList } from './model.js';
-import { flattenForContext } from './state.js';
+import { flattenForContext, type LocalState } from './state.js';
 
 /**
  * How peer messages are rendered into this session's model context. Shared by
@@ -70,6 +70,130 @@ export function renderMessage(message: Message, self = '', ownSession = ''): str
   const address = renderAddress(message, self, ownSession);
   return `  #${message.seq} ${renderSender(message, self)}${address ? ` ${address}` : ''} [${message.type}] ${ago(message.sentAt)}: `
     + `${flattenForContext(message.text)}${refs}`;
+}
+
+/**
+ * A backlog of unread messages as one delivery shows it. Two things decide it.
+ *
+ * Where each message is best read. One addressed to this member with no topic
+ * reaches every session they have, so when it was sent from a topic where they
+ * have another live session, that session gets it in full and this one only
+ * lists it by number; collab_inbox `seqs` opens it here. Everything else is
+ * shown in full.
+ *
+ * How much fits. The read cursor is a single high-water mark, so a delivery can
+ * only mark delivered a prefix of the backlog: messages go in oldest first until
+ * one no longer fits, and everything from there on stays unread for the next
+ * delivery. Marking all of it delivered while showing only part is how the
+ * session start used to lose messages.
+ */
+export interface Backlog {
+  /** Shown in full here, oldest first. */
+  full: Message[];
+  /** Listed by number only, per topic, with the session of this member that gets them in full. */
+  elsewhere: Array<{ topic: string; session: string; messages: Message[] }>;
+  /** The newest seq shown, in full or listed: the most a delivery may mark delivered. 0 when nothing is. */
+  throughSeq: number;
+  /** Unread messages past `throughSeq`, left for the next delivery. */
+  remaining: number;
+}
+
+export interface BacklogOptions {
+  self: string;
+  ownSession: string;
+  /** This session's topic. */
+  topic: string;
+  members: Member[];
+  maxFull?: number;
+  maxListed?: number;
+}
+
+export function planBacklog(messages: Message[], options: BacklogOptions): Backlog {
+  const { self, ownSession, topic, members, maxFull = 10, maxListed = 40 } = options;
+  const me = members.find((m) => m.memberId === self);
+  const others = me ? liveSessions(me).filter((s) => s.clientSessionId !== ownSession) : [];
+  const full: Message[] = [];
+  const groups = new Map<string, { topic: string; session: string; messages: Message[] }>();
+  let listed = 0;
+  let throughSeq = 0;
+  let taken = 0;
+
+  for (const message of messages) {
+    const to = message.to ?? {};
+    const wide = !to.topic && !to.clientSessionId;
+    // The session that sent it never gets it back, so it cannot be where it is read.
+    const home = wide && message.fromTopic && message.fromTopic !== topic
+      ? others.find((s) => s.topic === message.fromTopic && s.clientSessionId !== message.fromClientSessionId)
+      : undefined;
+    if (home) {
+      if (listed >= maxListed) break;
+      const group = groups.get(home.topic) ?? { topic: home.topic, session: home.clientSessionId, messages: [] };
+      group.messages.push(message);
+      groups.set(home.topic, group);
+      listed++;
+    } else {
+      if (full.length >= maxFull) break;
+      full.push(message);
+    }
+    throughSeq = message.seq;
+    taken++;
+  }
+
+  return { full, elsewhere: [...groups.values()], throughSeq, remaining: messages.length - taken };
+}
+
+/** `carlos: #14 #16? · you (another session): #20`, in order, `?` marking questions. */
+function renderListed(messages: Message[], self: string): string {
+  const bySender = new Map<string, string[]>();
+  for (const message of messages) {
+    const who = message.fromMemberId === self ? 'you (another session)' : flattenForContext(message.fromHandle || message.fromName);
+    bySender.set(who, [...(bySender.get(who) ?? []), `#${message.seq}${message.type === 'question' ? '?' : ''}`]);
+  }
+  return [...bySender].map(([who, seqs]) => `${who}: ${seqs.join(' ')}`).join(' · ');
+}
+
+/** A backlog as lines of context, below a header the caller writes: see `planBacklog`. */
+export function renderBacklog(backlog: Backlog, self: string, ownSession = ''): string[] {
+  const lines: string[] = [];
+  const grouped = backlog.elsewhere.length > 0;
+  if (grouped && backlog.full.length > 0) lines.push(`Here, in full (${backlog.full.length}):`);
+  for (const message of backlog.full) lines.push(renderMessage(message, self, ownSession));
+  for (const group of backlog.elsewhere) {
+    lines.push(`For your session ${group.session} in ${flattenForContext(group.topic)}, which gets them in full `
+      + `— listed here by number only (${group.messages.length}):`);
+    lines.push(`  ${renderListed(group.messages, self)}`);
+  }
+  if (grouped) lines.push('  (? = question) collab_inbox with `seqs` shows any of them here in full.');
+  if (backlog.remaining > 0) {
+    lines.push(`${backlog.remaining} more unread after #${backlog.throughSeq}, not shown yet: collab_inbox shows them.`);
+  }
+  return lines;
+}
+
+/**
+ * Where a sent message went, for its sender: `→ carlos in collab-global:
+ * session <id>`. The sessions come from presence (see `reachedSessions`), and
+ * names and topics from other members, so they are flattened.
+ */
+export function renderReach(
+  to: { handle?: string; topic?: string; clientSessionId?: string },
+  reached: Array<{ handle: string; session: MemberSession }>,
+): string {
+  const who = to.handle ? flattenForContext(slug(to.handle) || to.handle) : undefined;
+  if (to.clientSessionId) {
+    const where = reached[0]?.session.topic;
+    return `→ ${who ?? 'someone'}, session ${to.clientSessionId}${where ? ` in ${flattenForContext(where)}` : ''}`;
+  }
+  if (who && to.topic) {
+    const ids = reached.map((r) => r.session.clientSessionId);
+    return `→ ${who} in ${flattenForContext(to.topic)}${ids.length > 0 ? `: session ${ids.join(', ')}` : ''}`;
+  }
+  if (who) {
+    const where = reached.map((r) => `${r.session.clientSessionId} in ${flattenForContext(r.session.topic)}`);
+    return `→ ${who}, every session${where.length > 0 ? `: ${where.join(', ')}` : ''}`;
+  }
+  const whom = reached.map((r) => `${flattenForContext(r.handle)} (session ${r.session.clientSessionId})`);
+  return `→ topic ${flattenForContext(to.topic ?? '')}${whom.length > 0 ? `: ${whom.join(', ')}` : ''}`;
 }
 
 export function inFuture(ts: number): string {
@@ -188,6 +312,96 @@ export function renderTask(task: Task, self = ''): string {
   }
   const refs = task.refs?.length ? ` (refs: ${task.refs.map(flattenForContext).join(', ')})` : '';
   return `${flattenForContext(task.list)}#${task.number} [${state}] ${flattenForContext(task.title)}${detail}${refs}`;
+}
+
+/** Flattened, then cut to `max` characters. */
+function clip(text: string, max: number): string {
+  const flat = flattenForContext(text);
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+}
+
+const inProgress = (tasks: Task[]) => tasks
+  .filter((task) => task.status === 'in_progress' && task.holder)
+  .sort((a, b) => (b.lastProgress?.at ?? b.holder!.since) - (a.lastProgress?.at ?? a.holder!.since));
+
+/** `rc5#2 Fix the startup summary — 40%, 12m ago`: how far along, and since when nothing was said. */
+function progressLine(task: Task, titleMax: number): string {
+  const percent = task.lastProgress?.percent;
+  const when = ago(task.lastProgress?.at ?? task.holder?.since ?? task.updatedAt);
+  return `${flattenForContext(task.list)}#${task.number} ${clip(task.title, titleMax)} — `
+    + `${percent === undefined ? '' : `${percent}%, `}${when}`;
+}
+
+/**
+ * Who is doing what in the topic, for collab_status: its tasks in progress by
+ * holder and session, each with how far along it is and the last word on it.
+ * Titles, notes, names and branches were chosen by others, so all flattened.
+ */
+export function renderInProgress(tasks: Task[], members: Member[], self: string, ownSession = ''): string[] {
+  const groups = new Map<string, { holder: NonNullable<Task['holder']>; tasks: Task[] }>();
+  for (const task of inProgress(tasks)) {
+    const key = `${task.holder!.memberId}/${task.holder!.clientSessionId ?? ''}`;
+    groups.set(key, { holder: task.holder!, tasks: [...(groups.get(key)?.tasks ?? []), task] });
+  }
+
+  const lines: string[] = [];
+  for (const { holder, tasks: held } of groups.values()) {
+    const who = holder.memberId === self ? 'you' : flattenForContext(holder.handle || holder.name);
+    const id = sessionId(holder.clientSessionId);
+    let where = '';
+    if (id && holder.memberId === self && id === ownSession) where = ' · this session';
+    else if (id) {
+      const live = members.find((m) => m.memberId === holder.memberId && m.status !== 'offline')
+        ?.sessions?.find((s) => s.clientSessionId === id);
+      const at = live ? location(live.repo, live.branch) : '';
+      where = live ? ` · session ${id}${at ? ` · ${at}` : ''}` : ` · session ${id} (not connected)`;
+    }
+    lines.push(`  ${who}${where}`);
+    for (const task of held) {
+      lines.push(`    ${progressLine(task, 90)}`);
+      if (task.lastProgress?.text) lines.push(`      "${clip(task.lastProgress.text, 160)}"`);
+    }
+  }
+  return lines;
+}
+
+/** The same at session start, one line per task: `- carlos (session <id>): rc5#2 … — 40%, 12m ago`. */
+export function renderInProgressBrief(tasks: Task[], self: string, ownSession = '', max = 8): string[] {
+  return inProgress(tasks).slice(0, max).map((task) => {
+    const holder = task.holder!;
+    const id = sessionId(holder.clientSessionId);
+    const mine = holder.memberId === self;
+    const who = mine
+      ? (id && id === ownSession ? 'you (this session)' : 'you (another session)')
+      : `${flattenForContext(holder.handle || holder.name)}${id ? ` (session ${id})` : ''}`;
+    return `  - ${who}: ${progressLine(task, 60)}`;
+  });
+}
+
+/**
+ * The status line: `collab ● carlos rc5#2 40%, ana ux#1 · 2 unread`. Whether
+ * the channel is up, what the others in the topic have in progress (at most
+ * two, newest word first), and what this session has not read. It goes to a
+ * terminal rather than to the model, which is one more reason to flatten what
+ * others chose: a control character there is a terminal escape.
+ */
+export function renderStatusLine(state: LocalState, unread: number, ownSession: string): string {
+  if (!state.channel) return '';
+  const others = state.tasksStale ? [] : inProgress(state.tasks ?? [])
+    .filter((task) => !(task.holder!.memberId === state.self && task.holder!.clientSessionId === ownSession));
+  const doing = others.slice(0, 2).map((task) => {
+    const who = task.holder!.memberId === state.self ? 'you' : clip(task.holder!.handle || task.holder!.name, 20);
+    const percent = task.lastProgress?.percent;
+    return `${who} ${clip(task.list, 16)}#${task.number}${percent === undefined ? '' : ` ${percent}%`}`;
+  });
+  if (others.length > 2) doing.push(`+${others.length - 2}`);
+
+  const parts = [
+    ...(doing.length > 0 ? [doing.join(', ')] : []),
+    ...(unread > 0 ? [`${unread} unread`] : []),
+    ...(state.connected ? [] : ['offline']),
+  ];
+  return `collab ${state.connected ? '●' : '○'}${parts.length > 0 ? ` ${parts.join(' · ')}` : ''}`;
 }
 
 /** Keeps only letters for a tag attribute value; the server validates these, but they end up in markup. */

@@ -51,6 +51,12 @@ function sessionStart(source: string) {
 /**
  * Stands in for dist/daemon.mjs: registers like the real one, answers
  * /shutdown, and writes down that it was asked. Needs no network.
+ *
+ * On /shutdown it also removes its own registration, as the real one does
+ * (clearDaemonInfo). That matters here more than it seems: this test process is
+ * the fake's parent and sits blocked in spawnSync while the hook runs, so an
+ * exited fake stays a zombie that `isAlive` still counts as running, and a
+ * registration left behind would simply be reused.
  */
 const FAKE_DAEMON = `
 import fs from 'node:fs';
@@ -59,8 +65,15 @@ import path from 'node:path';
 const id = process.env.COLLAB_CLIENT_SESSION_ID;
 const dir = path.join(process.env.CLAUDE_PLUGIN_DATA, 'v1', 'sessions', id);
 fs.mkdirSync(dir, { recursive: true });
+function unregister() {
+  const file = path.join(dir, 'daemon.json');
+  try { if (JSON.parse(fs.readFileSync(file, 'utf8')).pid === process.pid) fs.unlinkSync(file); } catch {}
+}
 const server = http.createServer((req, res) => {
-  if (req.url === '/shutdown') fs.appendFileSync(path.join(dir, 'shutdowns.log'), process.pid + '\\n');
+  if (req.url === '/shutdown') {
+    fs.appendFileSync(path.join(dir, 'shutdowns.log'), process.pid + '\\n');
+    unregister();
+  }
   res.writeHead(200, { 'content-type': 'application/json' });
   res.end('{"ok":true}');
   if (req.url === '/shutdown') setTimeout(() => process.exit(0), 20);
@@ -136,6 +149,51 @@ describe('a session start', () => {
     // Another Claude Code process's session is none of its business.
     expect(shutdowns('other-window')).toEqual([]);
     expect(registration('other-window')?.pid).toBe(otherWindow);
+  }, 30_000);
+
+  it('shows the unread backlog oldest first, and marks delivered only what it showed', async () => {
+    // This process runs the session: its own daemon is kept, so nothing reaches the network.
+    await startFake('s1', process.pid);
+    writeLocalState('s1', { channel: 'team', topic: 't1', connected: true });
+    for (let seq = 1; seq <= 12; seq++) appendInbox('s1', message(seq));
+
+    const result = spawnSync(process.execPath, [hook, 'SessionStart'], {
+      input: JSON.stringify({ session_id: 's1', hook_event_name: 'SessionStart', source: 'startup', cwd: tempDir }),
+      env: { ...env, CLAUDE_PLUGIN_ROOT: root }, encoding: 'utf8', timeout: 20_000,
+    });
+    expect(result.status).toBe(0);
+
+    const context = (JSON.parse(result.stdout) as { hookSpecificOutput: { additionalContext: string } })
+      .hookSpecificOutput.additionalContext;
+    expect(context).toContain('12 unread message(s), the oldest 10 below.');
+    expect(context).toContain('#1 ana@t1');
+    expect(context).toContain('#10 ana@t1');
+    expect(context).not.toContain('#11 ana@t1');
+    expect(context).toContain('2 more unread after #10, not shown yet');
+    // The two it did not show stay unread for the Stop hook or collab_inbox.
+    expect(readCursor('s1').delivered).toBe(10);
+  }, 30_000);
+
+  it('says who is doing what in the topic, from the tasks the daemon read', async () => {
+    await startFake('s1', process.pid);
+    const list = { key: 'rc5', topic: 't1', title: 'rc.5', createdByName: 'ana', createdAt: 0, updatedAt: 0,
+      open: 0, inProgress: 1, done: 0, dismissed: 0 };
+    writeLocalState('s1', {
+      channel: 'team', topic: 't1', connected: true, self: 'ME', taskLists: [list], tasksStale: false,
+      tasks: [{ list: 'rc5', topic: 't1', number: 2, title: 'Fix the startup summary', status: 'in_progress',
+        createdByMemberId: 'PEER', createdByName: 'ana', createdAt: 0, progressCount: 1, updatedAt: 0,
+        holder: { memberId: 'PEER', handle: 'ana', name: 'Ana', clientSessionId: 's-a1', since: Date.now() },
+        lastProgress: { text: 'half way', percent: 50, authorName: 'Ana', at: Date.now() } }],
+    });
+
+    const result = spawnSync(process.execPath, [hook, 'SessionStart'], {
+      input: JSON.stringify({ session_id: 's1', hook_event_name: 'SessionStart', source: 'startup', cwd: tempDir }),
+      env: { ...env, CLAUDE_PLUGIN_ROOT: root }, encoding: 'utf8', timeout: 20_000,
+    });
+    expect(result.status).toBe(0);
+    const context = (JSON.parse(result.stdout) as { hookSpecificOutput: { additionalContext: string } })
+      .hookSpecificOutput.additionalContext;
+    expect(context).toContain('In progress in this topic:\n  - ana (session s-a1): rc5#2 Fix the startup summary — 50%, 0s ago');
   }, 30_000);
 
   it('ends with SessionEnd asking the session\'s daemon to stop', async () => {

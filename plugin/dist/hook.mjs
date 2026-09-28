@@ -1,7 +1,7 @@
 import { createRequire as __createRequire } from 'node:module';
 const require = __createRequire(import.meta.url);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/names.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/names.js
 var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 function isClientSessionId(value) {
   return typeof value === "string" && CLIENT_SESSION_ID.test(value);
@@ -306,6 +306,57 @@ function renderMessage(message, self = "", ownSession = "") {
   const address = renderAddress(message, self, ownSession);
   return `  #${message.seq} ${renderSender(message, self)}${address ? ` ${address}` : ""} [${message.type}] ${ago(message.sentAt)}: ${flattenForContext(message.text)}${refs}`;
 }
+function planBacklog(messages, options) {
+  const { self, ownSession, topic, members, maxFull = 10, maxListed = 40 } = options;
+  const me = members.find((m) => m.memberId === self);
+  const others = me ? liveSessions(me).filter((s) => s.clientSessionId !== ownSession) : [];
+  const full = [];
+  const groups = /* @__PURE__ */ new Map();
+  let listed = 0;
+  let throughSeq = 0;
+  let taken = 0;
+  for (const message of messages) {
+    const to = message.to ?? {};
+    const wide = !to.topic && !to.clientSessionId;
+    const home = wide && message.fromTopic && message.fromTopic !== topic ? others.find((s) => s.topic === message.fromTopic && s.clientSessionId !== message.fromClientSessionId) : void 0;
+    if (home) {
+      if (listed >= maxListed) break;
+      const group = groups.get(home.topic) ?? { topic: home.topic, session: home.clientSessionId, messages: [] };
+      group.messages.push(message);
+      groups.set(home.topic, group);
+      listed++;
+    } else {
+      if (full.length >= maxFull) break;
+      full.push(message);
+    }
+    throughSeq = message.seq;
+    taken++;
+  }
+  return { full, elsewhere: [...groups.values()], throughSeq, remaining: messages.length - taken };
+}
+function renderListed(messages, self) {
+  const bySender = /* @__PURE__ */ new Map();
+  for (const message of messages) {
+    const who = message.fromMemberId === self ? "you (another session)" : flattenForContext(message.fromHandle || message.fromName);
+    bySender.set(who, [...bySender.get(who) ?? [], `#${message.seq}${message.type === "question" ? "?" : ""}`]);
+  }
+  return [...bySender].map(([who, seqs]) => `${who}: ${seqs.join(" ")}`).join(" \xB7 ");
+}
+function renderBacklog(backlog, self, ownSession = "") {
+  const lines = [];
+  const grouped = backlog.elsewhere.length > 0;
+  if (grouped && backlog.full.length > 0) lines.push(`Here, in full (${backlog.full.length}):`);
+  for (const message of backlog.full) lines.push(renderMessage(message, self, ownSession));
+  for (const group of backlog.elsewhere) {
+    lines.push(`For your session ${group.session} in ${flattenForContext(group.topic)}, which gets them in full \u2014 listed here by number only (${group.messages.length}):`);
+    lines.push(`  ${renderListed(group.messages, self)}`);
+  }
+  if (grouped) lines.push("  (? = question) collab_inbox with `seqs` shows any of them here in full.");
+  if (backlog.remaining > 0) {
+    lines.push(`${backlog.remaining} more unread after #${backlog.throughSeq}, not shown yet: collab_inbox shows them.`);
+  }
+  return lines;
+}
 function inFuture(ts) {
   const minutes = Math.max(0, Math.round((ts - Date.now()) / 6e4));
   return minutes >= 60 ? `${Math.floor(minutes / 60)}h${minutes % 60}m` : `${minutes}m`;
@@ -353,6 +404,25 @@ function renderTaskListsLine(lists) {
     const counts = [[list.open, "open"], [list.inProgress, "in progress"]].filter(([n]) => n > 0).map(([n, what]) => `${n} ${what}`);
     return `${flattenForContext(list.key)} \u2014 ${counts.join(", ")}`;
   }).join(" \xB7 ");
+}
+function clip(text, max) {
+  const flat = flattenForContext(text);
+  return flat.length > max ? `${flat.slice(0, max - 1)}\u2026` : flat;
+}
+var inProgress = (tasks) => tasks.filter((task) => task.status === "in_progress" && task.holder).sort((a, b) => (b.lastProgress?.at ?? b.holder.since) - (a.lastProgress?.at ?? a.holder.since));
+function progressLine(task, titleMax) {
+  const percent = task.lastProgress?.percent;
+  const when = ago(task.lastProgress?.at ?? task.holder?.since ?? task.updatedAt);
+  return `${flattenForContext(task.list)}#${task.number} ${clip(task.title, titleMax)} \u2014 ${percent === void 0 ? "" : `${percent}%, `}${when}`;
+}
+function renderInProgressBrief(tasks, self, ownSession = "", max = 8) {
+  return inProgress(tasks).slice(0, max).map((task) => {
+    const holder = task.holder;
+    const id = sessionId(holder.clientSessionId);
+    const mine = holder.memberId === self;
+    const who = mine ? id && id === ownSession ? "you (this session)" : "you (another session)" : `${flattenForContext(holder.handle || holder.name)}${id ? ` (session ${id})` : ""}`;
+    return `  - ${who}: ${progressLine(task, 60)}`;
+  });
 }
 
 // src/lib/channel.ts
@@ -488,7 +558,7 @@ function renderChannelSummary(clientSessionId, mode) {
   lines.push(`This session: ${flattenForContext(clientSessionId)}${others.length > 0 ? `. Your other sessions: ${others.map((s) => renderSession(s)).join(" \xB7 ")}` : ""}`);
   const peers = state.members.filter((m) => m.memberId !== state.self);
   lines.push(peers.length > 0 ? ["Members:", ...peers.flatMap((m) => renderMemberLines(m, state.self, clientSessionId))].join("\n") : "Members: nobody else has joined this channel yet");
-  lines.push(`Address every collab_send and collab_done: topic "${topic}" reaches the others in this topic, user "<handle>" every session of that member, both that member's sessions in that topic; add session "<id>" to reach just that one session.`);
+  lines.push(`Address every collab_send and collab_done: replyTo <seq> answers exactly the session that wrote that message; topic "${topic}" reaches the others in this topic; user "<handle>" that member in this topic when they are in it, otherwise every session of theirs (anyTopic: true for all of them on purpose); user and topic, that member's sessions in that topic; session "<id>" just that one session.`);
   if (state.claims.length > 0) {
     lines.push("Files claimed in this topic right now:");
     for (const claim of state.claims) lines.push(`  - ${renderClaim(claim, state.self)}`);
@@ -500,16 +570,26 @@ function renderChannelSummary(clientSessionId, mode) {
   const taskLists = state.taskLists ?? [];
   if (taskLists.length > 0) {
     lines.push(`Task lists in this topic with open tasks: ${renderTaskListsLine(taskLists.slice(0, 8))}. collab_tasks shows them; check out a task with collab_task_update before starting on it.`);
+    const doing = state.tasksStale ? [] : renderInProgressBrief(state.tasks ?? [], state.self, clientSessionId);
+    if (doing.length > 0) lines.push("In progress in this topic:", ...doing);
   }
   const messages = mode === "unread" ? unreadMessages(clientSessionId) : recentMessages(clientSessionId, 10);
+  const backlog = planBacklog(messages, {
+    self: state.self,
+    ownSession: clientSessionId,
+    topic: state.topic,
+    members: state.members
+  });
   if (messages.length > 0) {
-    lines.push(mode === "unread" ? `${messages.length} unread message(s). ${UNTRUSTED_NOTE}` : `Last ${messages.length} message(s) on the channel, re-shown because compaction dropped them. You have probably seen these already. ${UNTRUSTED_NOTE}`);
-    for (const message of messages.slice(-10)) lines.push(renderMessage(message, state.self, clientSessionId));
+    const shown = messages.length - backlog.remaining;
+    lines.push(mode === "unread" ? `${messages.length} unread message(s)${backlog.remaining > 0 ? `, the oldest ${shown} below` : ""}. ${UNTRUSTED_NOTE}` : `Last ${messages.length} message(s) on the channel, re-shown because compaction dropped them. You have probably seen these already. ${UNTRUSTED_NOTE}`);
+    lines.push(...renderBacklog(backlog, state.self, clientSessionId));
   }
-  return {
-    text: lines.join("\n"),
-    highestSeq: messages.length > 0 ? Math.max(...messages.map((m) => m.seq)) : 0
-  };
+  return { text: lines.join("\n"), highestSeq: backlog.throughSeq };
+}
+function readyToSummarize(state) {
+  if (!state.connected) return false;
+  return !(state.tasksStale && state.taskLists.some((list) => list.inProgress > 0));
 }
 function channelNotice(clientSessionId, { always = false } = {}) {
   const status = readChannelStatus(clientSessionId);
@@ -540,7 +620,7 @@ async function onSessionStart(input, config, clientSessionId, tracksTurns) {
   try {
     await ensureDaemon(clientSessionId);
     const deadline = Date.now() + 4e3;
-    while (Date.now() < deadline && !readLocalState(clientSessionId).connected) {
+    while (Date.now() < deadline && !readyToSummarize(readLocalState(clientSessionId))) {
       await new Promise((r) => setTimeout(r, 150));
     }
   } catch (err) {
@@ -579,7 +659,7 @@ function onStop(config, clientSessionId, tracksTurns) {
       "",
       ...unread.map((message) => renderMessage(message, state.self, clientSessionId)),
       "",
-      "Take them into account now: answer questions, pick up work that was just unblocked, or acknowledge with the collab_send tool, addressed back to the sender (with its session to reach only the session that wrote). If nothing is needed, say so briefly and stop."
+      "Take them into account now: answer questions, pick up work that was just unblocked, or acknowledge with the collab_send tool, with replyTo set to the message's number so the answer goes back to exactly the session that wrote it. If nothing is needed, say so briefly and stop."
     ].join("\n")
   );
   return 2;

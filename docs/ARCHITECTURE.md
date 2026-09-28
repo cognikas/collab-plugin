@@ -170,6 +170,17 @@ Las herramientas `collab_tasks`, `collab_task_add` y `collab_task_update` hablan
   respuesta a los cambios de esta misma sesión, que no recibe su propio aviso. Un aviso que llega
   tarde no hace retroceder una lista (`applyTaskList`). Ese resumen es lo que muestran el
   `SessionStart` y `collab_status`; las tareas en sí se piden con `collab_tasks`.
+- **Quién hace qué.** `state.json` guarda también las tareas abiertas del tema (`tasks`), para que el
+  `SessionStart` y la statusline digan quién tiene qué sin ir a la red.
+  - Un aviso `TASK` dice qué tarea cambió, pero no quién la tiene ahora ni cuánto avanzó. Por eso el
+    daemon vuelve a leer las tareas abiertas con `ListTasks` después de cada `hello` y de cada aviso,
+    juntando los avisos de 300 ms en una sola lectura.
+  - Los cambios de esta sesión salen de la respuesta a su propia petición (`applyTask`).
+  - El `hello` marca las tareas como atrasadas (`tasksStale`) hasta esa lectura. Si alguna lista
+    tiene tareas en curso, el `SessionStart` la espera dentro de sus 4 s, y si no llega no muestra
+    tareas que podrían estar viejas.
+  - `collab_status` las pide frescas cuando hay algo en curso y muestra la sección «In progress»:
+    persona, sesión, tarea, avance, última nota y hace cuánto.
 - **Avisos.** Son mensajes corrientes del inbox, de tipo `task`. Los cierres llegan en `normal`, así
   que interrumpen en el siguiente `Stop`; el resto llega en `low` y se muestra junto con la próxima
   entrega. Llegan también a las otras sesiones de quien actuó en el tema.
@@ -213,6 +224,17 @@ del servidor:
   lugar de ampliar el reparto en silencio.
 - **Mensaje para esta sesión:** se muestra como `→ you (this session)`, comparando con la id propia
   que el daemon expone en `GET /status`.
+- **Destinatario por defecto:** `resolveRecipient` (`src/lib/sessions.ts`) lo decide antes de enviar,
+  con la presencia que tiene el daemon:
+  - `replyTo` va a la sesión que escribió ese mensaje, que sale del inbox local. Si ya no está
+    conectada, va a su miembro en el tema del mensaje, que es donde sigue la conversación.
+  - `user` sin tema ni sesión va a ese miembro en el tema propio si tiene una sesión viva ahí. Si no,
+    va a todas sus sesiones, con una nota en la confirmación. `anyTopic` pide todas a propósito. Así
+    lo de un proyecto no cae en las sesiones que esa persona tiene abiertas en otros.
+  - Es una decisión del cliente: el protocolo y el backend no cambian, y quién ve qué lo sigue
+    decidiendo el servidor.
+- **Confirmación:** `sentLine` nombra las sesiones que la presencia dice que cubre el destinatario
+  (`reachedSessions`), junto al conteo que devuelve el servidor.
 
 ### El guard anti-bucle del hook `Stop`
 
@@ -269,6 +291,21 @@ Según lo que pase después del primer push:
 
 Sin esa regla, un push que cae en un turno largo se daría por perdido. El mensaje se entregaría dos
 veces, y el canal se apagaría para el resto de la sesión con un falso «not registered».
+
+### La statusline
+
+Claude Code corre el comando de statusline en cada refresco, con el JSON de la sesión por stdin. Por
+eso `src/statusline.ts` es un bundle aparte, `dist/statusline.mjs`, de unos 5 KB: no carga el
+protocolo ni va a la red. Solo lee `state.json` y el inbox de la sesión, y tarda unos 30 ms.
+
+- **Dónde están los datos.** El comando corre desde el script del usuario, fuera del plugin, así que
+  `CLAUDE_PLUGIN_DATA` no está o es de otro plugin. Busca la sesión en
+  `~/.claude/plugins/data/collab-channel-*` y usa la carpeta que la tiene.
+- **Qué muestra.** Si el canal está conectado, hasta dos tareas en curso de los demás en el tema, sacadas
+  del caché de tareas, y cuántos mensajes quedan sin leer. Mientras el caché está atrasado
+  (`tasksStale`), no muestra tareas.
+- **Una terminal, no el modelo.** Los nombres y claves que eligieron otros se aplanan igual: en una
+  terminal, un carácter de control es una secuencia de escape.
 
 ### Por qué `dist/` está commiteado
 
