@@ -51,8 +51,17 @@ Desde la sesión afectada:
 /collab-join
 ```
 
-Ejecuta `cli.mjs doctor`, que revisa configuración, credenciales, daemon y socket, y muestra las
-últimas líneas del log. A mano:
+Ejecuta `cli.mjs doctor`. Desde la herramienta Bash no ve `/config` (solo los procesos del plugin
+reciben las opciones) ni `CLAUDE_PLUGIN_DATA`. Por eso busca él mismo la carpeta de datos del plugin
+(`~/.claude/plugins/data/collab-channel-*`) y la sesión por sus daemons, y revisa:
+
+- las credenciales, y si un CLI anterior las dejó en `~/.claude/collab-channel`;
+- el daemon y el socket;
+- el último error o el rechazo del servidor;
+- si la entrega `channel` cayó a `stop`;
+- si `invite_code` sigue puesto después del canje.
+
+También muestra las últimas líneas del log. `--session <id>` elige otra sesión. A mano:
 
 ```bash
 node plugin/dist/cli.mjs doctor

@@ -12,6 +12,14 @@ export interface PluginConfig {
   apiEndpoint: string;
   inviteCode?: string;
   displayName: string;
+  /** False when `displayName` is only the OS username, because none was configured or none is visible here. */
+  displayNameSet?: boolean;
+  /**
+   * Whether this process can see /config at all. Claude Code hands the options
+   * only to the plugin's own processes (hooks, and the MCP server through
+   * .mcp.json), never to a command run from a session's Bash tool.
+   */
+  optionsVisible?: boolean;
   deliveryMode: DeliveryMode;
   stopMinUrgency: Urgency;
   /** Lowest urgency injected after a tool call, mid-turn; `off` disables it. */
@@ -40,14 +48,41 @@ export interface Credentials {
 
 /**
  * Plugin-scoped storage that survives plugin updates. Claude Code exports this
- * to hook and MCP subprocesses; the fallback keeps the CLI usable standalone.
+ * to hook and MCP subprocesses.
  *
  * Under `v1/`: 1.0 keeps the plugin id of 0.6 (collab-channel@cognikas), so the
  * two share CLAUDE_PLUGIN_DATA. 0.6's credentials belong to another backend and
  * its inbox to another protocol; neither must be read as 1.0's.
  */
 export function dataDir(): string {
-  return path.join(process.env.CLAUDE_PLUGIN_DATA ?? path.join(homedir(), '.claude', 'collab-channel'), 'v1');
+  return path.join(dataRoot(), 'v1');
+}
+
+/**
+ * Without CLAUDE_PLUGIN_DATA (the CLI run from a session's Bash tool, a status
+ * line script) this is still the plugin's own folder, the one the daemon and
+ * the hooks use. Writing credentials anywhere else left the plugin without
+ * them, redeeming an invite that was already spent.
+ */
+function dataRoot(): string {
+  if (process.env.CLAUDE_PLUGIN_DATA) return process.env.CLAUDE_PLUGIN_DATA;
+  const installed = installedDataRoots();
+  return installed.find((dir) => fs.existsSync(path.join(dir, 'v1'))) ?? installed[0] ?? legacyDataRoot();
+}
+
+/** Where Claude Code keeps this plugin's data: ~/.claude/plugins/data/collab-channel-<marketplace>. */
+export function installedDataRoots(): string[] {
+  const root = path.join(homedir(), '.claude', 'plugins', 'data');
+  try {
+    return fs.readdirSync(root).filter((name) => name.startsWith('collab-channel')).sort().map((name) => path.join(root, name));
+  } catch {
+    return [];
+  }
+}
+
+/** Where the CLI used to keep things when run outside Claude Code. Only doctor still looks here. */
+export function legacyDataRoot(): string {
+  return path.join(homedir(), '.claude', 'collab-channel');
 }
 
 export function credentialsPath(): string {
@@ -88,10 +123,13 @@ function optional(value: string | undefined): string | undefined {
  */
 export function readConfig(): PluginConfig {
   const e = process.env;
+  const displayName = optional(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional(e.COLLAB_DISPLAY_NAME);
   return {
     apiEndpoint: (optional(e.CLAUDE_PLUGIN_OPTION_API_ENDPOINT) ?? optional(e.COLLAB_API_ENDPOINT) ?? '').replace(/\/+$/, ''),
     inviteCode: optional(e.CLAUDE_PLUGIN_OPTION_INVITE_CODE) ?? optional(e.COLLAB_INVITE_CODE),
-    displayName: optional(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional(e.COLLAB_DISPLAY_NAME) ?? e.USERNAME ?? e.USER ?? 'unnamed',
+    displayName: displayName ?? e.USERNAME ?? e.USER ?? 'unnamed',
+    displayNameSet: displayName !== undefined,
+    optionsVisible: Object.keys(e).some((name) => name.startsWith('CLAUDE_PLUGIN_OPTION_')),
     deliveryMode: oneOf(e.CLAUDE_PLUGIN_OPTION_DELIVERY_MODE, ['stop', 'prompt', 'manual', 'all', 'channel'] as const, 'stop'),
     stopMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_STOP_MIN_URGENCY, ['low', 'normal', 'high'] as const, 'normal'),
     midTurnMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_MIDTURN_MIN_URGENCY, ['off', 'low', 'normal', 'high'] as const, 'high'),

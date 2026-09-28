@@ -13,14 +13,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import WebSocket from 'ws';
 import {
-  HEARTBEAT_SECONDS, MemberStatus, TaskFilter, type MessageInitShape, type Result, type UpdateTaskRequestSchema,
+  ErrorCode, HEARTBEAT_SECONDS, MemberStatus, TaskFilter, type MessageInitShape, type Result, type UpdateTaskRequestSchema,
 } from '@collab/protocol';
 import {
   ackViaHttp, ApiError, channelViaHttp, fetchState, issueTicket, join, listTasksViaHttp, sendViaHttp, type Origin,
 } from './lib/api.js';
 import {
-  dataDir, gitBranch, readConfig, resolveCredentials, resolveTopic, sessionDir, writeCredentials,
-  type Credentials, type PluginConfig,
+  credentialsPath, dataDir, gitBranch, legacyDataRoot, readConfig, resolveCredentials, resolveTopic, sessionDir,
+  writeCredentials, type Credentials, type PluginConfig,
 } from './lib/config.js';
 import {
   clientFrame, decodeServerFrame, encodeFrame, fatalReason, handleServerFrame, subscribeFrame,
@@ -709,7 +709,9 @@ async function ensureCredentials(config: PluginConfig): Promise<Credentials> {
   }
 
   try {
-    const joined = await join(config.apiEndpoint, config.inviteCode, config.displayName);
+    const joined = await join(config.apiEndpoint, config.inviteCode, config.displayName).catch((err: unknown) => {
+      throw err instanceof ApiError && err.code === ErrorCode.INVALID_INVITE ? spentInvite(err) : err;
+    });
     const creds: Credentials = {
       apiEndpoint: config.apiEndpoint,
       wsEndpoint: joined.wsEndpoint,
@@ -726,6 +728,21 @@ async function ensureCredentials(config: PluginConfig): Promise<Credentials> {
   } finally {
     if (owned) { try { fs.unlinkSync(lock); } catch { /* ignore */ } }
   }
+}
+
+/**
+ * An invite that is already spent, most often because it was redeemed outside
+ * the plugin, whose credentials then landed where the plugin does not look.
+ */
+function spentInvite(err: ApiError): Error {
+  const stray = path.join(legacyDataRoot(), 'v1', 'credentials.json');
+  const where = credentialsPath();
+  if (path.resolve(stray) !== path.resolve(where) && fs.existsSync(stray)) {
+    return new Error(`the invite was already redeemed, and its credentials are in ${stray}, where an older collab-channel `
+      + `CLI left them: move that file to ${where} and restart Claude Code`);
+  }
+  return new Error(`${err.message}. If you already joined with this code, your credentials should be in ${where}; `
+    + 'otherwise ask whoever runs the channel for a new invite');
 }
 
 async function main(): Promise<void> {
@@ -751,6 +768,7 @@ async function main(): Promise<void> {
 
 main().catch((err: Error) => {
   log('fatal', err.message);
-  writeLocalState(clientSessionId, { connected: false, lastError: err.message });
+  // Whoever is waiting for this daemon (ensureDaemon) reads it from here, instead of only timing out.
+  writeLocalState(clientSessionId, { connected: false, lastError: err.message, failedAt: Date.now() });
   process.exit(1);
 });

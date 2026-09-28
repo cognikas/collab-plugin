@@ -4175,7 +4175,7 @@ var NullValue;
   NullValue2[NullValue2["NULL_VALUE"] = 0] = "NULL_VALUE";
 })(NullValue || (NullValue = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/model_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/model_pb.js
 var file_collab_v1_model = /* @__PURE__ */ fileDesc("ChVjb2xsYWIvdjEvbW9kZWwucHJvdG8SCWNvbGxhYi52MSJFCglSZWNpcGllbnQSDgoGaGFuZGxlGAEgASgJEg0KBXRvcGljGAIgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAMgASgJInAKCUFkZHJlc3NlZRIRCgltZW1iZXJfaWQYASABKAkSDgoGaGFuZGxlGAIgASgJEg0KBXRvcGljGAMgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAQgASgJEhYKDmluY2x1ZGVfc2VuZGVyGAUgASgIIrIECgdNZXNzYWdlEgsKA3NlcRgBIAEoDRIPCgdjaGFubmVsGAIgASgJEhYKDmZyb21fbWVtYmVyX2lkGAMgASgJEhEKCWZyb21fbmFtZRgEIAEoCRITCgtmcm9tX2hhbmRsZRgFIAEoCRISCgpmcm9tX3RvcGljGAYgASgJEiAKAnRvGAcgASgLMhQuY29sbGFiLnYxLkFkZHJlc3NlZRIkCgR0eXBlGAggASgOMhYuY29sbGFiLnYxLk1lc3NhZ2VUeXBlEgwKBHRleHQYCSABKAkSIwoHdXJnZW5jeRgKIAEoDjISLmNvbGxhYi52MS5VcmdlbmN5EgwKBHJlZnMYCyADKAkSKwoHc2VudF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHgoWZnJvbV9jbGllbnRfc2Vzc2lvbl9pZBgNIAEoCRImCgRkb25lGBQgASgLMhYuY29sbGFiLnYxLkRvbmVQYXlsb2FkSAASKAoFY2xhaW0YFSABKAsyFy5jb2xsYWIudjEuQ2xhaW1QYXlsb2FkSAASLAoHcmVsZWFzZRgWIAEoCzIZLmNvbGxhYi52MS5SZWxlYXNlUGF5bG9hZEgAEiwKB2NvbnRleHQYFyABKAsyGS5jb2xsYWIudjEuQ29udGV4dFBheWxvYWRIABImCgR0YXNrGBggASgLMhYuY29sbGFiLnYxLlRhc2tQYXlsb2FkSABCCQoHcGF5bG9hZCIuCgtEb25lUGF5bG9hZBIMCgR0YXNrGAEgASgJEhEKCWF1dG9tYXRpYxgCIAEoCCJQCgxDbGFpbVBheWxvYWQSEAoIY2xhaW1faWQYASABKAkSLgoKZXhwaXJlc19hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiIgoOUmVsZWFzZVBheWxvYWQSEAoIY2xhaW1faWQYASABKAkiLgoOQ29udGV4dFBheWxvYWQSCwoDa2V5GAEgASgJEg8KB3ZlcnNpb24YAiABKA0ihAEKC1Rhc2tQYXlsb2FkEiEKBGxpc3QYASABKAsyEy5jb2xsYWIudjEuVGFza0xpc3QSDwoHbnVtYmVycxgCIAMoDRIjCgVldmVudBgDIAEoDjIULmNvbGxhYi52MS5UYXNrRXZlbnQSHAoUcHJldmlvdXNfaG9sZGVyX25hbWUYBCABKAkiiwIKBk1lbWJlchIRCgltZW1iZXJfaWQYASABKAkSFAoMZGlzcGxheV9uYW1lGAIgASgJEg4KBmhhbmRsZRgDIAEoCRInCgZzdGF0dXMYBCABKA4yFy5jb2xsYWIudjEuTWVtYmVyU3RhdHVzEgwKBHJlcG8YBSABKAkSDgoGYnJhbmNoGAYgASgJEhMKC2Nvbm5lY3Rpb25zGAcgASgNEg4KBnRvcGljcxgIIAMoCRIwCgxsYXN0X3NlZW5fYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEioKCHNlc3Npb25zGAogAygLMhguY29sbGFiLnYxLk1lbWJlclNlc3Npb24iiQEKDU1lbWJlclNlc3Npb24SGQoRY2xpZW50X3Nlc3Npb25faWQYASABKAkSDQoFdG9waWMYAiABKAkSDAoEcmVwbxgDIAEoCRIOCgZicmFuY2gYBCABKAkSMAoMY29ubmVjdGVkX2F0GAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCLSAQoFQ2xhaW0SEAoIY2xhaW1faWQYASABKAkSFwoPb3duZXJfbWVtYmVyX2lkGAIgASgJEhIKCm93bmVyX25hbWUYAyABKAkSDQoFdG9waWMYBCABKAkSDQoFcGF0aHMYBSADKAkSDAoEbm90ZRgGIAEoCRIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpleHBpcmVzX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCK5AQoMQ29udGV4dEVudHJ5EgsKA2tleRgBIAEoCRIPCgd2ZXJzaW9uGAIgASgNEg0KBXRpdGxlGAMgASgJEg8KB3N1bW1hcnkYBCABKAkSDAoEYm9keRgFIAEoCRIYChBhdXRob3JfbWVtYmVyX2lkGAYgASgJEhMKC2F1dGhvcl9uYW1lGAcgASgJEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIpMBCg5Db250ZXh0U3VtbWFyeRILCgNrZXkYASABKAkSDwoHdmVyc2lvbhgCIAEoDRINCgV0aXRsZRgDIAEoCRIPCgdzdW1tYXJ5GAQgASgJEhMKC2F1dGhvcl9uYW1lGAUgASgJEi4KCmNyZWF0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIpACCghUYXNrTGlzdBILCgNrZXkYASABKAkSDQoFdG9waWMYAiABKAkSDQoFdGl0bGUYAyABKAkSHAoUY3JlYXRlZF9ieV9tZW1iZXJfaWQYBCABKAkSFwoPY3JlYXRlZF9ieV9uYW1lGAUgASgJEi4KCmNyZWF0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgwKBG9wZW4YCCABKA0SEwoLaW5fcHJvZ3Jlc3MYCSABKA0SDAoEZG9uZRgKIAEoDRIRCglkaXNtaXNzZWQYCyABKA0igwEKClRhc2tIb2xkZXISEQoJbWVtYmVyX2lkGAEgASgJEg4KBmhhbmRsZRgCIAEoCRIMCgRuYW1lGAMgASgJEhkKEWNsaWVudF9zZXNzaW9uX2lkGAQgASgJEikKBXNpbmNlGAUgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJ3CghUYXNrTm90ZRIMCgR0ZXh0GAEgASgJEhQKB3BlcmNlbnQYAiABKA1IAIgBARITCgthdXRob3JfbmFtZRgDIAEoCRImCgJhdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBCCgoIX3BlcmNlbnQi8QMKBFRhc2sSDAoEbGlzdBgBIAEoCRINCgV0b3BpYxgCIAEoCRIOCgZudW1iZXIYAyABKA0SDQoFdGl0bGUYBCABKAkSDAoEcmVmcxgFIAMoCRIlCgZzdGF0dXMYBiABKA4yFS5jb2xsYWIudjEuVGFza1N0YXR1cxIcChRjcmVhdGVkX2J5X21lbWJlcl9pZBgHIAEoCRIXCg9jcmVhdGVkX2J5X25hbWUYCCABKAkSLgoKY3JlYXRlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASJQoGaG9sZGVyGAogASgLMhUuY29sbGFiLnYxLlRhc2tIb2xkZXISKgoNbGFzdF9wcm9ncmVzcxgLIAEoCzITLmNvbGxhYi52MS5UYXNrTm90ZRIWCg5wcm9ncmVzc19jb3VudBgMIAEoDRIbChNjbG9zZWRfYnlfbWVtYmVyX2lkGA0gASgJEhYKDmNsb3NlZF9ieV9uYW1lGA4gASgJEi0KCWNsb3NlZF9hdBgPIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKcmVzb2x1dGlvbhgQIAEoCRIuCgp1cGRhdGVkX2F0GBEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCLBAgoMQ2hhbm5lbFN0YXRlEg8KB2NoYW5uZWwYASABKAkSFgoOc2VsZl9tZW1iZXJfaWQYAiABKAkSDgoGaGFuZGxlGAMgASgJEg0KBXRvcGljGAQgASgJEiIKB21lbWJlcnMYBSADKAsyES5jb2xsYWIudjEuTWVtYmVyEiAKBmNsYWltcxgGIAMoCzIQLmNvbGxhYi52MS5DbGFpbRIwCg1jb250ZXh0X2luZGV4GAcgAygLMhkuY29sbGFiLnYxLkNvbnRleHRTdW1tYXJ5EiQKCG1lc3NhZ2VzGAggAygLMhIuY29sbGFiLnYxLk1lc3NhZ2USDgoGY3Vyc29yGAkgASgNEhIKCmxhdGVzdF9zZXEYCiABKA0SJwoKdGFza19saXN0cxgLIAMoCzITLmNvbGxhYi52MS5UYXNrTGlzdCIvCg9Qcm90b2NvbFZlcnNpb24SDQoFbWFqb3IYASABKA0SDQoFbWlub3IYAiABKA0ibwoKQ2xpZW50SW5mbxIMCgRuYW1lGAEgASgJEg8KB3ZlcnNpb24YAiABKAkSLAoIcHJvdG9jb2wYAyABKAsyGi5jb2xsYWIudjEuUHJvdG9jb2xWZXJzaW9uEhQKDGNhcGFiaWxpdGllcxgEIAMoCSpZCgdVcmdlbmN5EhcKE1VSR0VOQ1lfVU5TUEVDSUZJRUQQABIPCgtVUkdFTkNZX0xPVxABEhIKDlVSR0VOQ1lfTk9STUFMEAISEAoMVVJHRU5DWV9ISUdIEAMq1wEKC01lc3NhZ2VUeXBlEhwKGE1FU1NBR0VfVFlQRV9VTlNQRUNJRklFRBAAEhUKEU1FU1NBR0VfVFlQRV9OT1RFEAESGQoVTUVTU0FHRV9UWVBFX1FVRVNUSU9OEAISFQoRTUVTU0FHRV9UWVBFX0RPTkUQAxIWChJNRVNTQUdFX1RZUEVfQ0xBSU0QBBIYChRNRVNTQUdFX1RZUEVfUkVMRUFTRRAFEhgKFE1FU1NBR0VfVFlQRV9DT05URVhUEAYSFQoRTUVTU0FHRV9UWVBFX1RBU0sQByp6CgxNZW1iZXJTdGF0dXMSHQoZTUVNQkVSX1NUQVRVU19VTlNQRUNJRklFRBAAEhgKFE1FTUJFUl9TVEFUVVNfT05MSU5FEAESFgoSTUVNQkVSX1NUQVRVU19JRExFEAISGQoVTUVNQkVSX1NUQVRVU19PRkZMSU5FEAMqjQEKClRhc2tTdGF0dXMSGwoXVEFTS19TVEFUVVNfVU5TUEVDSUZJRUQQABIUChBUQVNLX1NUQVRVU19PUEVOEAESGwoXVEFTS19TVEFUVVNfSU5fUFJPR1JFU1MQAhIUChBUQVNLX1NUQVRVU19ET05FEAMSGQoVVEFTS19TVEFUVVNfRElTTUlTU0VEEAQqugEKCVRhc2tFdmVudBIaChZUQVNLX0VWRU5UX1VOU1BFQ0lGSUVEEAASFAoQVEFTS19FVkVOVF9BRERFRBABEhoKFlRBU0tfRVZFTlRfQ0hFQ0tFRF9PVVQQAhIXChNUQVNLX0VWRU5UX1BST0dSRVNTEAMSFwoTVEFTS19FVkVOVF9SRUxFQVNFRBAEEhMKD1RBU0tfRVZFTlRfRE9ORRAFEhgKFFRBU0tfRVZFTlRfRElTTUlTU0VEEAZiBnByb3RvMw", [file_google_protobuf_timestamp]);
 var ProtocolVersionSchema = /* @__PURE__ */ messageDesc(file_collab_v1_model, 18);
 var Urgency;
@@ -4222,7 +4222,7 @@ var TaskEvent;
   TaskEvent2[TaskEvent2["DISMISSED"] = 6] = "DISMISSED";
 })(TaskEvent || (TaskEvent = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/errors_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/errors_pb.js
 var file_collab_v1_errors = /* @__PURE__ */ fileDesc("ChZjb2xsYWIvdjEvZXJyb3JzLnByb3RvEgljb2xsYWIudjEiVgoLRXJyb3JEZXRhaWwSIgoEY29kZRgBIAEoDjIULmNvbGxhYi52MS5FcnJvckNvZGUSDwoHbWVzc2FnZRgCIAEoCRISCgpyZXF1ZXN0X2lkGAMgASgJKtMGCglFcnJvckNvZGUSGgoWRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEhcKE0VSUk9SX0NPREVfSU5URVJOQUwQARIaChZFUlJPUl9DT0RFX0JBRF9SRVFVRVNUEAISGAoURVJST1JfQ09ERV9OT1RfRk9VTkQQAxIeChpFUlJPUl9DT0RFX1VOQVVUSEVOVElDQVRFRBAEEhYKEkVSUk9SX0NPREVfUkVWT0tFRBAFEiMKH0VSUk9SX0NPREVfVU5TVVBQT1JURURfUFJPVE9DT0wQBhIhCh1FUlJPUl9DT0RFX1VOS05PV05fQ09OTkVDVElPThAHEh0KGUVSUk9SX0NPREVfSU5WQUxJRF9JTlZJVEUQCBIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAJEhkKFUVSUk9SX0NPREVfTkFNRV9UQUtFThAKEh4KGkVSUk9SX0NPREVfSU5WQUxJRF9DSEFOTkVMEAsSHAoYRVJST1JfQ09ERV9JTlZBTElEX1RPUElDEAwSJQohRVJST1JfQ09ERV9JTlZBTElEX0NMSUVOVF9TRVNTSU9OEA0SHQoZRVJST1JfQ09ERV9JTlZBTElEX01FTUJFUhAOEhsKF0VSUk9SX0NPREVfTk9fUkVDSVBJRU5UEA8SHQoZRVJST1JfQ09ERV9VTktOT1dOX0hBTkRMRRAQEhwKGEVSUk9SX0NPREVfRU1QVFlfTUVTU0FHRRAREh8KG0VSUk9SX0NPREVfTUVTU0FHRV9UT09fTE9ORxASEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9UWVBFEBMSFwoTRVJST1JfQ09ERV9OT19QQVRIUxAUEh0KGUVSUk9SX0NPREVfVE9PX01BTllfUEFUSFMQFRIaChZFUlJPUl9DT0RFX0lOVkFMSURfS0VZEBYSIAocRVJST1JfQ09ERV9DT05URVhUX1RPT19MQVJHRRAXEhsKF0VSUk9SX0NPREVfSU5WQUxJRF9UQVNLEBgSGQoVRVJST1JfQ09ERV9UQVNLX1RBS0VOEBkSGgoWRVJST1JfQ09ERV9UQVNLX0NMT1NFRBAaEh4KGkVSUk9SX0NPREVfTk9UX1RBU0tfSE9MREVSEBtiBnByb3RvMw");
 var ErrorDetailSchema = /* @__PURE__ */ messageDesc(file_collab_v1_errors, 0);
 var ErrorCode;
@@ -4257,11 +4257,11 @@ var ErrorCode;
   ErrorCode2[ErrorCode2["NOT_TASK_HOLDER"] = 27] = "NOT_TASK_HOLDER";
 })(ErrorCode || (ErrorCode = {}));
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/gen/collab/v1/membership_pb.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/gen/collab/v1/membership_pb.js
 var file_collab_v1_membership = /* @__PURE__ */ fileDesc("Chpjb2xsYWIvdjEvbWVtYmVyc2hpcC5wcm90bxIJY29sbGFiLnYxIjMKC0pvaW5SZXF1ZXN0Eg4KBmludml0ZRgBIAEoCRIUCgxkaXNwbGF5X25hbWUYAiABKAkifQoMSm9pblJlc3BvbnNlEhEKCW1lbWJlcl9pZBgBIAEoCRIOCgZzZWNyZXQYAiABKAkSDwoHY2hhbm5lbBgDIAEoCRIUCgxkaXNwbGF5X25hbWUYBCABKAkSDgoGaGFuZGxlGAUgASgJEhMKC3dzX2VuZHBvaW50GAYgASgJMkwKEU1lbWJlcnNoaXBTZXJ2aWNlEjcKBEpvaW4SFi5jb2xsYWIudjEuSm9pblJlcXVlc3QaFy5jb2xsYWIudjEuSm9pblJlc3BvbnNlYgZwcm90bzM");
 var MembershipService = /* @__PURE__ */ serviceDesc(file_collab_v1_membership, 0);
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/names.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/names.js
 var CLIENT_SESSION_ID = /^[A-Za-z0-9._-]{1,64}$/;
 var MAX_NAME_CHARS = 64;
 function slug(value, max = MAX_NAME_CHARS) {
@@ -5664,7 +5664,7 @@ function listValueFromJson(listValue, json, ctx) {
   }
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/version.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/version.js
 var PROTOCOL_MAJOR = 1;
 var PROTOCOL_MINOR = 0;
 var PROTOCOL = create(ProtocolVersionSchema, { major: PROTOCOL_MAJOR, minor: PROTOCOL_MINOR });
@@ -5672,7 +5672,7 @@ function formatVersion(version) {
   return `${version.major}.${version.minor}`;
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/json.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/json.js
 var READ = { ignoreUnknownFields: true };
 function encode(schema, message) {
   return toJsonString(schema, message);
@@ -5681,7 +5681,7 @@ function decode(schema, text) {
   return fromJsonString(schema, text, READ);
 }
 
-// ../node_modules/.pnpm/@collab+protocol@git+https+++github.com+cognikas+collab-protocol.git+ad2de364e6acd34807f41ffc07020d6be2faa01b&path++ts/node_modules/@collab/protocol/dist/http.js
+// ../node_modules/.pnpm/@collab+protocol@git+https+_d867deb9466a3724dc9d04c2c006fdb5/node_modules/@collab/protocol/dist/http.js
 function rpcPath(method) {
   return `/${method.parent.typeName}/${method.name}`;
 }
@@ -5729,7 +5729,23 @@ import { homedir } from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 function dataDir() {
-  return path.join(process.env.CLAUDE_PLUGIN_DATA ?? path.join(homedir(), ".claude", "collab-channel"), "v1");
+  return path.join(dataRoot(), "v1");
+}
+function dataRoot() {
+  if (process.env.CLAUDE_PLUGIN_DATA) return process.env.CLAUDE_PLUGIN_DATA;
+  const installed = installedDataRoots();
+  return installed.find((dir) => fs.existsSync(path.join(dir, "v1"))) ?? installed[0] ?? legacyDataRoot();
+}
+function installedDataRoots() {
+  const root = path.join(homedir(), ".claude", "plugins", "data");
+  try {
+    return fs.readdirSync(root).filter((name) => name.startsWith("collab-channel")).sort().map((name) => path.join(root, name));
+  } catch {
+    return [];
+  }
+}
+function legacyDataRoot() {
+  return path.join(homedir(), ".claude", "collab-channel");
 }
 function credentialsPath() {
   return path.join(dataDir(), "credentials.json");
@@ -5737,8 +5753,8 @@ function credentialsPath() {
 function sessionsRoot() {
   return path.join(dataDir(), "sessions");
 }
-function sessionDir(clientSessionId2) {
-  return path.join(sessionsRoot(), sanitize(clientSessionId2));
+function sessionDir(clientSessionId) {
+  return path.join(sessionsRoot(), sanitize(clientSessionId));
 }
 function sanitize(value) {
   return value.replace(/[^A-Za-z0-9._-]/g, "-").slice(0, 80) || "default";
@@ -5756,10 +5772,13 @@ function optional(value) {
 }
 function readConfig() {
   const e = process.env;
+  const displayName = optional(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional(e.COLLAB_DISPLAY_NAME);
   return {
     apiEndpoint: (optional(e.CLAUDE_PLUGIN_OPTION_API_ENDPOINT) ?? optional(e.COLLAB_API_ENDPOINT) ?? "").replace(/\/+$/, ""),
     inviteCode: optional(e.CLAUDE_PLUGIN_OPTION_INVITE_CODE) ?? optional(e.COLLAB_INVITE_CODE),
-    displayName: optional(e.CLAUDE_PLUGIN_OPTION_DISPLAY_NAME) ?? optional(e.COLLAB_DISPLAY_NAME) ?? e.USERNAME ?? e.USER ?? "unnamed",
+    displayName: displayName ?? e.USERNAME ?? e.USER ?? "unnamed",
+    displayNameSet: displayName !== void 0,
+    optionsVisible: Object.keys(e).some((name) => name.startsWith("CLAUDE_PLUGIN_OPTION_")),
     deliveryMode: oneOf(e.CLAUDE_PLUGIN_OPTION_DELIVERY_MODE, ["stop", "prompt", "manual", "all", "channel"], "stop"),
     stopMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_STOP_MIN_URGENCY, ["low", "normal", "high"], "normal"),
     midTurnMinUrgency: oneOf(e.CLAUDE_PLUGIN_OPTION_MIDTURN_MIN_URGENCY, ["off", "low", "normal", "high"], "high"),
@@ -5862,8 +5881,8 @@ var EMPTY_STATE = {
   updatedAt: 0
 };
 var EMPTY_CURSOR = { delivered: 0, acked: 0, lastBlockAt: 0 };
-function file(clientSessionId2, name) {
-  return path2.join(sessionDir(clientSessionId2), name);
+function file(clientSessionId, name) {
+  return path2.join(sessionDir(clientSessionId), name);
 }
 function readJson(filePath, fallback) {
   try {
@@ -5872,10 +5891,20 @@ function readJson(filePath, fallback) {
     return fallback;
   }
 }
-function readDaemonInfo(clientSessionId2) {
-  const info = readJson(file(clientSessionId2, "daemon.json"), void 0);
+function readDaemonInfo(clientSessionId) {
+  const info = readJson(file(clientSessionId, "daemon.json"), void 0);
   if (!info) return void 0;
   return isAlive(info.pid) ? info : void 0;
+}
+function listDaemons() {
+  const root = sessionsRoot();
+  let entries;
+  try {
+    entries = fs2.readdirSync(root);
+  } catch {
+    return [];
+  }
+  return entries.map((entry) => readJson(path2.join(root, entry, "daemon.json"), void 0)).filter((info) => Boolean(info) && isAlive(info.pid)).sort((a, b) => b.startedAt - a.startedAt);
 }
 function isAlive(pid) {
   try {
@@ -5885,10 +5914,10 @@ function isAlive(pid) {
     return err.code === "EPERM";
   }
 }
-function readInbox(clientSessionId2, sinceSeq = 0) {
+function readInbox(clientSessionId, sinceSeq = 0) {
   let raw;
   try {
-    raw = fs2.readFileSync(file(clientSessionId2, "inbox.jsonl"), "utf8");
+    raw = fs2.readFileSync(file(clientSessionId, "inbox.jsonl"), "utf8");
   } catch {
     return [];
   }
@@ -5907,16 +5936,19 @@ function readInbox(clientSessionId2, sinceSeq = 0) {
   }
   return messages.sort((a, b) => a.seq - b.seq);
 }
-function readCursor(clientSessionId2) {
-  return { ...EMPTY_CURSOR, ...readJson(file(clientSessionId2, "cursor.json"), {}) };
+function readCursor(clientSessionId) {
+  return { ...EMPTY_CURSOR, ...readJson(file(clientSessionId, "cursor.json"), {}) };
 }
-function readLocalState(clientSessionId2) {
-  return { ...EMPTY_STATE, ...readJson(file(clientSessionId2, "state.json"), {}) };
+function readChannelStatus(clientSessionId) {
+  return readJson(file(clientSessionId, "channel.json"), void 0);
 }
-function unreadMessages(clientSessionId2, options = {}) {
-  const { delivered } = readCursor(clientSessionId2);
+function readLocalState(clientSessionId) {
+  return { ...EMPTY_STATE, ...readJson(file(clientSessionId, "state.json"), {}) };
+}
+function unreadMessages(clientSessionId, options = {}) {
+  const { delivered } = readCursor(clientSessionId);
   const threshold = URGENCY_RANK[options.minUrgency ?? "low"];
-  return readInbox(clientSessionId2, delivered).filter((message) => URGENCY_RANK[message.urgency] >= threshold);
+  return readInbox(clientSessionId, delivered).filter((message) => URGENCY_RANK[message.urgency] >= threshold);
 }
 function flattenForContext(text) {
   return String(text ?? "").replace(/\r?\n|[\u2028\u2029]/g, " \u23CE ").replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/g, " ");
@@ -5929,27 +5961,55 @@ function daemonEntry() {
 }
 var DaemonUnavailable = class extends Error {
 };
-async function ensureDaemon(clientSessionId2, timeoutMs = 8e3) {
-  const existing = readDaemonInfo(clientSessionId2);
+function samePath(a, b) {
+  const norm = (p) => p.replace(/[\\/]+$/, "").replace(/\\/g, "/").toLowerCase();
+  return norm(a) === norm(b);
+}
+function pickSession(daemons, hints) {
+  const sameProcess = hints.claudePid ? daemons.find((d) => d.claudePid === hints.claudePid) : void 0;
+  if (sameProcess) return sameProcess.clientSessionId;
+  if (hints.sessionId) return hints.sessionId;
+  if (daemons.length === 0) return "default";
+  return (daemons.find((d) => samePath(d.cwd, hints.cwd)) ?? daemons[0]).clientSessionId;
+}
+function resolveSessionId() {
+  const explicit = process.env.COLLAB_CLIENT_SESSION_ID;
+  if (explicit) return explicit;
+  return pickSession(listDaemons(), {
+    claudePid: process.ppid,
+    sessionId: process.env.CLAUDE_CODE_SESSION_ID ?? process.env.CLAUDE_SESSION_ID,
+    cwd: process.env.CLAUDE_PROJECT_DIR ?? process.cwd()
+  });
+}
+async function ensureDaemon(clientSessionId, timeoutMs = 8e3) {
+  const existing = readDaemonInfo(clientSessionId);
   if (existing) return existing;
+  const spawnedAt = Date.now();
   const child = spawn(process.execPath, [daemonEntry()], {
     detached: true,
     stdio: "ignore",
     windowsHide: true,
-    env: { ...process.env, COLLAB_CLIENT_SESSION_ID: clientSessionId2 }
+    env: { ...process.env, COLLAB_CLIENT_SESSION_ID: clientSessionId }
   });
   child.on("error", () => void 0);
   child.unref();
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 120));
-    const info = readDaemonInfo(clientSessionId2);
+    const info = readDaemonInfo(clientSessionId);
     if (info) return info;
+    const failure2 = startFailure(clientSessionId, spawnedAt);
+    if (failure2) throw new DaemonUnavailable(`the collab-channel daemon could not start: ${failure2}`);
   }
-  throw new DaemonUnavailable("the collab-channel daemon did not start in time");
+  const failure = startFailure(clientSessionId, spawnedAt);
+  throw new DaemonUnavailable(failure ? `the collab-channel daemon could not start: ${failure}` : "the collab-channel daemon did not start in time");
 }
-async function callDaemon(clientSessionId2, path5, options = {}) {
-  const info = options.autostart ? await ensureDaemon(clientSessionId2) : readDaemonInfo(clientSessionId2);
+function startFailure(clientSessionId, since) {
+  const state = readLocalState(clientSessionId);
+  return state.failedAt && state.failedAt >= since && state.lastError ? state.lastError : void 0;
+}
+async function callDaemon(clientSessionId, path5, options = {}) {
+  const info = options.autostart ? await ensureDaemon(clientSessionId) : readDaemonInfo(clientSessionId);
   if (!info) throw new DaemonUnavailable("no collab-channel daemon is running for this session");
   return request(info, path5, options);
 }
@@ -6018,7 +6078,15 @@ function renderTaskListsLine(lists) {
 }
 
 // src/cli.ts
-var clientSessionId = process.env.COLLAB_CLIENT_SESSION_ID ?? "default";
+function sessionArgument() {
+  const at = process.argv.indexOf("--session");
+  const named = at > 0 ? process.argv[at + 1] : void 0;
+  return named || resolveSessionId();
+}
+function strayCredentials() {
+  const stray = path4.join(legacyDataRoot(), "v1", "credentials.json");
+  return path4.resolve(stray) !== path4.resolve(credentialsPath()) && fs3.existsSync(stray) ? stray : void 0;
+}
 async function cmdJoin() {
   const config = readConfig();
   const existing = resolveCredentials(config);
@@ -6027,12 +6095,23 @@ async function cmdJoin() {
     console.log(`Member id: ${existing.memberId}`);
     return 0;
   }
+  if (!config.optionsVisible && !(process.env.COLLAB_API_ENDPOINT && process.env.COLLAB_INVITE_CODE && config.displayNameSet)) {
+    console.error("This command cannot see your /config settings, so it will not redeem the invite with guessed values.");
+    console.error("Inside Claude Code, fill in api_endpoint, invite_code and display_name in /config and restart Claude Code:");
+    console.error("the plugin redeems the invite itself when the session starts.");
+    console.error("Outside Claude Code, set COLLAB_API_ENDPOINT, COLLAB_INVITE_CODE and COLLAB_DISPLAY_NAME and run this again.");
+    return 1;
+  }
   if (!config.apiEndpoint) {
-    console.error("api_endpoint is not set. Run /config and fill in the collab-channel settings.");
+    console.error("api_endpoint is not set. Fill it in /config (or COLLAB_API_ENDPOINT).");
     return 1;
   }
   if (!config.inviteCode) {
-    console.error("invite_code is not set. Ask whoever runs the channel for a code, then add it in /config.");
+    console.error("invite_code is not set. Ask whoever runs the channel for a code, then add it in /config (or COLLAB_INVITE_CODE).");
+    return 1;
+  }
+  if (!config.displayNameSet) {
+    console.error("display_name is not set. Fill it in /config (or COLLAB_DISPLAY_NAME): your handle comes from it and never changes.");
     return 1;
   }
   const joined = await join(config.apiEndpoint, config.inviteCode, config.displayName);
@@ -6050,60 +6129,62 @@ async function cmdJoin() {
   console.log(`Joined channel "${creds.channel}" as ${creds.displayName} (handle ${creds.handle}).`);
   console.log(`Member id: ${creds.memberId}`);
   console.log(`Credentials stored in ${credentialsPath()}`);
-  console.log("\nThe invite is now spent. To move the secret into your OS keychain instead,");
+  console.log("\nThe invite is now spent: clear invite_code in /config. To move the secret into your OS keychain instead,");
   console.log("paste the member id and secret into member_id and member_secret in /config and delete that file.");
   return 0;
 }
 async function cmdStatus() {
-  const state = readLocalState(clientSessionId);
+  const clientSessionId = sessionArgument();
   const daemon = readDaemonInfo(clientSessionId);
-  if (!daemon) {
-    console.log("Daemon: not running for this session (starting it...)");
-    await ensureDaemon(clientSessionId).catch((err) => console.error(`  failed: ${err.message}`));
-    await new Promise((r) => setTimeout(r, 1200));
-  } else {
-    console.log(`Daemon: running (pid ${daemon.pid}, port ${daemon.port})`);
-  }
-  const fresh = readLocalState(clientSessionId);
-  console.log(`Channel: ${fresh.channel || "(unknown)"} \u2014 ${fresh.connected ? "connected" : "disconnected"}`);
-  console.log(`You: ${fresh.handle || "(unknown)"}, in topic ${fresh.topic || "(not resolved yet)"}`);
-  if (fresh.server) console.log(`Server: ${fresh.server}`);
-  if (fresh.lastError) console.log(`Last error: ${fresh.lastError}`);
+  console.log(daemon ? `Daemon: running (pid ${daemon.pid}, port ${daemon.port})` : "Daemon: not running for this session. The plugin starts it when a Claude Code session starts: restart Claude Code.");
+  const state = readLocalState(clientSessionId);
+  console.log(`Channel: ${state.channel || "(unknown)"} \u2014 ${state.connected ? "connected" : "disconnected"}`);
+  console.log(`You: ${state.handle || "(unknown)"}, in topic ${state.topic || "(not resolved yet)"}`);
+  if (state.server) console.log(`Server: ${state.server}`);
+  if (state.lastError) console.log(`Last error: ${state.lastError}`);
   console.log(`Session: ${clientSessionId}`);
-  const me = fresh.members.find((m) => m.memberId === fresh.self);
+  const me = state.members.find((m) => m.memberId === state.self);
   const others = me ? liveSessions(me).filter((s) => s.clientSessionId !== clientSessionId) : [];
   if (others.length > 0) console.log(`Your other sessions:
 ${others.map((s) => `  - ${renderSession(s)}`).join("\n")}`);
-  const peers = fresh.members.filter((m) => m.memberId !== fresh.self);
+  const peers = state.members.filter((m) => m.memberId !== state.self);
   console.log(peers.length > 0 ? `Members:
-${peers.flatMap((m) => renderMemberLines(m, fresh.self, clientSessionId)).join("\n")}` : "Members: none yet");
-  console.log(fresh.claims.length > 0 ? `Claims in this topic:
-${fresh.claims.map((c) => `  - ${c.ownerName}: ${c.paths.join(", ")}`).join("\n")}` : "Claims in this topic: none");
-  console.log(`Shared context in this topic: ${fresh.contextIndex.length} entries`);
-  const taskLists = fresh.taskLists ?? [];
+${peers.flatMap((m) => renderMemberLines(m, state.self, clientSessionId)).join("\n")}` : "Members: none yet");
+  console.log(state.claims.length > 0 ? `Claims in this topic:
+${state.claims.map((c) => `  - ${c.ownerName}: ${c.paths.join(", ")}`).join("\n")}` : "Claims in this topic: none");
+  console.log(`Shared context in this topic: ${state.contextIndex.length} entries`);
+  const taskLists = state.taskLists ?? [];
   console.log(taskLists.length > 0 ? `Task lists with open tasks: ${renderTaskListsLine(taskLists)}` : "Task lists with open tasks: none");
   console.log(`Unread: ${unreadMessages(clientSessionId).length}`);
-  void state;
   return 0;
 }
 async function cmdDoctor() {
   const config = readConfig();
   const creds = resolveCredentials(config);
+  const clientSessionId = sessionArgument();
   const problems = [];
   const line = (label, ok, detail) => {
     console.log(`  ${ok ? "ok  " : "FAIL"}  ${label.padEnd(22)} ${detail}`);
     if (!ok) problems.push(label);
   };
+  const info = (label, detail) => console.log(`  ${"--".padEnd(4)}  ${label.padEnd(22)} ${detail}`);
   console.log("collab-channel diagnostics\n");
   line("node", true, process.version);
   line("plugin data dir", fs3.existsSync(dataDir()), dataDir());
-  line("api_endpoint", Boolean(config.apiEndpoint), config.apiEndpoint || "(not set \u2014 run /config)");
-  line("display_name", Boolean(config.displayName), config.displayName);
-  line("delivery_mode", true, config.deliveryMode);
-  line("topic", true, config.topic ? `${config.topic} (configured)` : `${resolveTopic(config, process.cwd())} (from the repo name)`);
-  line("credentials", Boolean(creds?.secret), creds ? `channel "${creds.channel}" as ${creds.displayName}` : "(not joined)");
+  if (config.optionsVisible) {
+    line("api_endpoint", Boolean(config.apiEndpoint), config.apiEndpoint || "(not set \u2014 fill it in /config)");
+    line("display_name", Boolean(config.displayNameSet), config.displayNameSet ? config.displayName : "(not set \u2014 fill it in /config; your handle comes from it)");
+    line("delivery_mode", true, config.deliveryMode);
+    line("topic", true, config.topic ? `${config.topic} (configured)` : `${resolveTopic(config, process.cwd())} (from the repo name)`);
+  } else {
+    info("settings", "not visible to this command: only the plugin's own processes get /config. The session below is what counts.");
+  }
+  const stray = strayCredentials();
+  line("credentials", Boolean(creds?.secret), creds ? `channel "${creds.channel}" as ${creds.displayName}${creds.handle ? ` (handle ${creds.handle})` : ""}` : stray ? `(not in the plugin's folder) \u2014 an older CLI stored them in ${stray}: move that file to ${credentialsPath()}` : "(not joined yet: the plugin redeems the invite when a Claude Code session starts)");
+  if (creds?.secret && stray) info("stray credentials", `${stray} is an older copy the plugin does not read; it can be deleted`);
+  info("session", clientSessionId);
   const daemon = readDaemonInfo(clientSessionId);
-  line("daemon", Boolean(daemon), daemon ? `pid ${daemon.pid} on 127.0.0.1:${daemon.port}` : "(not running)");
+  line("daemon", Boolean(daemon), daemon ? `pid ${daemon.pid} on 127.0.0.1:${daemon.port}` : "(not running \u2014 the plugin starts it when a Claude Code session starts: restart Claude Code)");
   if (daemon) {
     try {
       const status = await callDaemon(clientSessionId, "/status");
@@ -6112,6 +6193,15 @@ async function cmdDoctor() {
       line("websocket", false, err.message);
     }
   }
+  const state = readLocalState(clientSessionId);
+  if (state.fatal) line("refused by the server", false, state.fatal);
+  else if (state.lastError && !state.connected) line("last error", false, state.lastError);
+  const channel = readChannelStatus(clientSessionId);
+  if (channel?.state === "active") info("delivery", "channel: pushed into the session while it is idle");
+  else if (channel?.state === "fallback") {
+    info("delivery", `stop, not channel: ${channel.reason ?? "the channel is not registered"}`);
+  }
+  if (config.inviteCode && creds?.secret) info("invite_code", "still set in /config but already redeemed: you can clear it");
   const logFile = path4.join(sessionDir(clientSessionId), "daemon.log");
   if (fs3.existsSync(logFile)) {
     console.log(`
