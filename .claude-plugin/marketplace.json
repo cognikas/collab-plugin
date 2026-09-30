@@ -3,7 +3,7 @@
   "owner": {
     "name": "Cognikas"
   },
-  "description": "Internal Claude Code plugins from Cognikas",
+  "description": "Claude Code plugins from Cognikas",
   "version": "0.1.0",
   "plugins": [
     {
@@ -15,7 +15,7 @@
       "author": {
         "name": "Cognikas"
       },
-      "license": "MIT",
+      "license": "Apache-2.0",
       "category": "productivity",
       "keywords": [
         "collaboration",
